@@ -1,3 +1,8 @@
+Desarrolladores:
+- Juan Manuel Sanchez Diaz
+- Elias Baron
+- Diego Ivan Kippes
+
 Frontend: React.TS + Tailwind
 Backend: Kotlin +17
 Servicio externo: Kotlin +17
