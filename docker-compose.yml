@@ -4,7 +4,6 @@ services:
     image: postgres:16-alpine
     container_name: aterrizar-postgres
     restart: unless-stopped
-    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-aterrizar_db}
       POSTGRES_USER: ${POSTGRES_USER:-aterrizar}
@@ -27,19 +26,18 @@ services:
       dockerfile: Dockerfile
     container_name: aterrizar-backend
     restart: unless-stopped
-    env_file: .env
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-aterrizar_db}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-${POSTGRES_USER:-aterrizar}}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-aterrizar123}}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-min-32-chars-long-change-me-in-prod}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-3600000}
       FLYING_SERVICE_URL: ${FLYING_SERVICE_URL:-http://flying-service:8081}
+      CORS_ALLOWED_ORIGIN: http://localhost:${FRONT_PORT:-5173}
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "${BACKEND_PORT:-8080}:8080"
-      - "5005:5005"
     volumes:
       - ./backend:/app
       - gradle-cache-backend:/home/gradle/.gradle
@@ -49,7 +47,19 @@ services:
       postgres:
         condition: service_healthy
       flying-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5m
+    develop:
+      watch:
+        - action: restart
+          path: ./backend/src/main
+        - action: restart
+          path: ./backend/build.gradle.kts
     networks:
       - app-network
   flying-service:
@@ -58,18 +68,29 @@ services:
       dockerfile: Dockerfile
     container_name: aterrizar-flying
     restart: unless-stopped
-    env_file: .env
     environment:
       SERVER_PORT: 8081
+      CORS_ALLOWED_ORIGIN: http://localhost:${FRONT_PORT:-5173}
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "${FLYING_SERVICE_PORT:-8081}:8081"
-      - "5006:5006"
     volumes:
       - ./flying.service:/app
       - gradle-cache-flying:/home/gradle/.gradle
       - /app/build
       - /app/.gradle
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5m
+    develop:
+      watch:
+        - action: restart
+          path: ./flying.service/src/main
+        - action: restart
+          path: ./flying.service/build.gradle.kts
     networks:
       - app-network
   frontend:
@@ -78,7 +99,6 @@ services:
       dockerfile: Dockerfile
     container_name: aterrizar-frontend
     restart: unless-stopped
-    env_file: .env
     environment:
       VITE_API_URL: http://localhost:${BACKEND_PORT:-8080}
       VITE_FLYING_SERVICE_URL: http://localhost:${FLYING_SERVICE_PORT:-8081}
@@ -90,7 +110,7 @@ services:
       - /app/dist
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
 volumes:

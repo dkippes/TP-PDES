@@ -14,12 +14,15 @@ export default function Ping() {
   const [error, setError] = useState<string | null>(null)
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  const flyingStatus = typeof data?.flyingService?.status === 'string'
+    ? data.flyingService.status
+    : '?'
 
   const handlePing = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${apiUrl}/api/ping`)
+      const res = await fetch(`${apiUrl}/api/ping`, { method: 'POST' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       setData(json)
@@ -55,7 +58,7 @@ export default function Ping() {
       {data && (
         <div style={{ marginTop: 12, textAlign: 'left' }}>
           <p>Backend: <strong>{data.status}</strong></p>
-          <p>Flying: <strong>{(data.flyingService as any)?.status ?? '?'}</strong></p>
+          <p>Flying: <strong>{flyingStatus}</strong></p>
           {data.persisted && (
             <p>Guardado en DB: id <strong>{data.persisted.id}</strong> - total pings: <strong>{data.persisted.totalPings}</strong></p>
           )}
