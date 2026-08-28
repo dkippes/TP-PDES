@@ -25,10 +25,8 @@ Requisitos: Docker Desktop y copiar envs
 cp .env.example .env
 ```
 
-Levantar todo con hot-reload (front HMR + backend/flying auto-restart):
 ```bash
-docker compose up --build # primera vez (baja imágenes y compila)
-# en adelante, con el up corriendo, editás y se recarga solo
+docker compose up --build # primera vez (baja imágenes y compila) en adelante, con el up corriendo, editás y se recarga solo
 docker compose up
 ```
 
@@ -37,20 +35,5 @@ Servicios:
 - Backend: http://localhost:8080/api/ping
 - Flying Service: http://localhost:8081/ping
 - Postgres: localhost:5432 (db: aterrizar_db, user: aterrizar)
-
-Probar chain E2E:
-```bash
-curl http://localhost:8081/ping
-curl http://localhost:8080/api/ping
-# o desde el front: botón "Probar Ping" -> persiste en ping_log
-```
-
-Logs y rebuild:
-```bash
-docker compose logs -f backend
-docker compose logs -f flying-service
-docker compose down # frena todo
-docker compose down -v # borra DB
-```
 
 Solo necesitás `--build` si tocás `build.gradle.kts`, `Dockerfile` o `package.json`.
