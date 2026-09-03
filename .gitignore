@@ -4,3 +4,9 @@
 *.ipr
 .env
 .DS_Store
+**/.gradle/
+**/build/
+**/node_modules/
+**/dist/
+**/.npm-cache/
+*.tsbuildinfo

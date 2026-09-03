@@ -20,20 +20,20 @@ Enunciado: https://docs.google.com/document/d/1n9sqzswbg9A0U5-oUGCUQGDazKaM0rrPJ
 
 ## Cómo levantar el proyecto (Docker - dev)
 
-Requisitos: Docker Desktop y copiar envs
+Requisito: Docker Desktop. Compose incluye valores predeterminados para desarrollo; para personalizarlos, copiá el archivo de ejemplo:
 ```bash
 cp .env.example .env
 ```
 
 ```bash
-docker compose up --build # primera vez (baja imágenes y compila) en adelante, con el up corriendo, editás y se recarga solo
-docker compose up
+docker compose up --build --watch
 ```
 
 Servicios:
 - Frontend: http://localhost:5173
-- Backend: http://localhost:8080/api/ping
+- Backend health: http://localhost:8080/api/health
+- Backend E2E ping: `POST http://localhost:8080/api/ping`
 - Flying Service: http://localhost:8081/ping
 - Postgres: localhost:5432 (db: aterrizar_db, user: aterrizar)
 
-Solo necesitás `--build` si tocás `build.gradle.kts`, `Dockerfile` o `package.json`.
+Compose Watch reinicia Backend o Flying Service cuando cambia su `src/main` o `build.gradle.kts`; Gradle recompila al arrancar el servicio. Sólo necesitás `--build` nuevamente si tocás un `Dockerfile` o `package.json`.

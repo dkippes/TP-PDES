@@ -11,6 +11,6 @@ class PingController {
     fun ping(): Map<String, Any> = mapOf(
         "service" to "flying-service",
         "status" to "ok",
-        "timestamp" to "2025-08-28T03:15:04.867606879Z"
+        "timestamp" to Instant.now().toString()
     )
 }
