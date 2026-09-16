@@ -70,6 +70,9 @@ services:
     restart: unless-stopped
     environment:
       SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://flying-postgres:5432/${FLYING_POSTGRES_DB:-flying_db}
+      SPRING_DATASOURCE_USERNAME: ${FLYING_POSTGRES_USER:-flying}
+      SPRING_DATASOURCE_PASSWORD: ${FLYING_POSTGRES_PASSWORD:-flying123}
       CORS_ALLOWED_ORIGIN: http://localhost:${FRONT_PORT:-5173}
       SPRING_PROFILES_ACTIVE: dev
     ports:
@@ -79,6 +82,9 @@ services:
       - gradle-cache-flying:/home/gradle/.gradle
       - /app/build
       - /app/.gradle
+    depends_on:
+      flying-postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/ping"]
       interval: 5s
@@ -113,6 +119,24 @@ services:
         condition: service_healthy
     networks:
       - app-network
+  flying-postgres:
+    image: postgres:16-alpine
+    container_name: aterrizar-flying-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${FLYING_POSTGRES_DB:-flying_db}
+      POSTGRES_USER: ${FLYING_POSTGRES_USER:-flying}
+      POSTGRES_PASSWORD: ${FLYING_POSTGRES_PASSWORD:-flying123}
+    volumes:
+      - flying-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FLYING_POSTGRES_USER:-flying} -d ${FLYING_POSTGRES_DB:-flying_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
 volumes:
   pgdata:
     name: aterrizar-pgdata
@@ -120,6 +144,8 @@ volumes:
     name: aterrizar-gradle-backend
   gradle-cache-flying:
     name: aterrizar-gradle-flying
+  flying-pgdata:
+    name: aterrizar-flying-pgdata
 networks:
   app-network:
     name: aterrizar-network
