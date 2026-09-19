@@ -1,0 +1,64 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "front/**"
+      - ".github/workflows/front-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "front/**"
+      - ".github/workflows/front-ci.yml"
+
+concurrency:
+  group: front-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  docker:
+    name: Build Docker image
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./front
+          push: false
+          tags: aterrizar-front:ci
+          cache-from: type=gha,scope=front
+          cache-to: type=gha,mode=max,scope=front
