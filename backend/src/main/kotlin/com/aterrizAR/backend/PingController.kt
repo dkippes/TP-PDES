@@ -1,5 +1,9 @@
 package com.aterrizAR.backend
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -12,15 +16,25 @@ import java.time.Instant
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Infraestructura", description = "Estado y conectividad de los servicios")
 class PingController(
     private val restTemplate: RestTemplate,
     private val pingLogRepository: PingLogRepository,
     @Value("\${flying.service.url:http://flying-service:8081}") private val flyingServiceUrl: String
 ) {
     @GetMapping("/health")
+    @Operation(summary = "Consulta el estado del backend")
+    @ApiResponse(responseCode = "200", description = "Backend disponible")
     fun health(): Map<String, String> = mapOf("status" to "up")
 
     @PostMapping("/ping")
+    @Operation(summary = "Verifica la conexión con flying-service y registra el resultado")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Backend y flying-service disponibles"),
+            ApiResponse(responseCode = "503", description = "flying-service no está disponible"),
+        ],
+    )
     fun ping(): ResponseEntity<Map<String, Any>> {
         val flyingResponse = try {
             restTemplate.getForObject("$flyingServiceUrl/ping", Map::class.java)
