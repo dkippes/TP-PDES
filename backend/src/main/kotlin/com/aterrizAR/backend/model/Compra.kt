@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import java.time.LocalDate
 
 @Entity
 class Compra(
@@ -14,6 +15,8 @@ class Compra(
     val id: Long? = null,
     @Column(nullable = false)
     val precio: Float,
+    @Column(nullable = false)
+    val fecha: LocalDate,
     @ManyToOne(optional = false)
     @JoinColumn(name = "paquete_id", nullable = false)
     val paquete: Paquete,

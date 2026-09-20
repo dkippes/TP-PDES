@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import java.time.LocalDate
 
 @Entity
 class Paquete(
@@ -26,4 +27,10 @@ class Paquete(
     val agencia: Agencia,
     @Column(nullable = false)
     val destino: String,
+    @Column(nullable = false)
+    val origen: String,
+    @Column(name = "fecha_inicial", nullable = false)
+    val fechaInicial: LocalDate,
+    @Column(name = "fecha_final", nullable = false)
+    val fechaFinal: LocalDate,
 )
