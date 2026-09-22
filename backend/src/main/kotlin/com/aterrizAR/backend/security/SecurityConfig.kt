@@ -29,6 +29,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.access.AccessDeniedHandler
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import java.nio.charset.StandardCharsets
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -39,17 +42,20 @@ import org.springframework.core.convert.converter.Converter
 @EnableMethodSecurity
 class SecurityConfig(
     @Value("\${app.jwt.secret}") private val jwtSecret: String,
+    @Value("\${app.cors.allowed-origin}") private val corsAllowedOrigin: String,
     private val objectMapper: ObjectMapper,
 ) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http
         .csrf { it.disable() }
-        .cors(Customizer.withDefaults())
+        .cors { it.configurationSource(corsConfigurationSource()) }
         .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         .authorizeHttpRequests {
             it.requestMatchers(
                 "/api/auth/register",
                 "/api/auth/login",
+                "/api/auth/refresh",
+                "/api/auth/logout",
                 "/api/health",
                 "/api/ping",
                 "/swagger-ui/**",
@@ -67,6 +73,19 @@ class SecurityConfig(
                 .accessDeniedHandler(accessDeniedHandler())
         }
         .build()
+
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration().apply {
+            allowedOrigins = listOf(corsAllowedOrigin)
+            allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            allowedHeaders = listOf("*")
+            allowCredentials = true
+        }
+        return UrlBasedCorsConfigurationSource().apply {
+            registerCorsConfiguration("/**", configuration)
+        }
+    }
 
     @Bean
     fun passwordEncoder() = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()

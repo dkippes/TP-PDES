@@ -29,6 +29,10 @@ class AuthExceptionHandler {
     fun handleInvalidCredentials(exception: InvalidCredentialsException): ResponseEntity<ApiErrorResponseDTO> =
         error(HttpStatus.UNAUTHORIZED, "Invalid credentials")
 
+    @ExceptionHandler(InvalidRefreshTokenException::class)
+    fun handleInvalidRefreshToken(exception: InvalidRefreshTokenException): ResponseEntity<ApiErrorResponseDTO> =
+        error(HttpStatus.UNAUTHORIZED, "Invalid or expired refresh token")
+
     private fun error(
         status: HttpStatus,
         message: String,

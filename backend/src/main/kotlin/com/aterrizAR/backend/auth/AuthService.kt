@@ -12,6 +12,7 @@ class AuthService(
     private val usuarioRepository: UsuarioRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
+    private val refreshTokenService: RefreshTokenService,
 ) {
     @Transactional
     fun register(request: RegisterRequestDTO): PublicUserResponseDTO {
@@ -31,22 +32,43 @@ class AuthService(
         return usuario.toDTO()
     }
 
-    @Transactional(readOnly = true)
-    fun login(request: LoginRequestDTO): LoginResponseDTO {
+    @Transactional
+    fun login(request: LoginRequestDTO): AuthenticatedSession {
         val usuario = usuarioRepository.findByCorreo(request.correo.trim().lowercase(Locale.ROOT))
         if (usuario == null || !passwordEncoder.matches(request.password, usuario.passwordHash)) {
             throw InvalidCredentialsException()
         }
-
-        val publicUser = usuario.toDTO()
-        return LoginResponseDTO(
-            accessToken = jwtService.createToken(usuario, publicUser.role),
-            expiresIn = jwtService.expiresInSeconds,
-            user = publicUser,
-        )
+        return authenticatedSession(usuario, refreshTokenService.issueFor(usuario))
     }
 
+    @Transactional
+    fun refresh(rawRefreshToken: String): AuthenticatedSession {
+        val rotation = refreshTokenService.rotate(rawRefreshToken)
+        return authenticatedSession(rotation.usuario, rotation.rawToken)
+    }
+
+    @Transactional
+    fun logout(rawRefreshToken: String?) {
+        refreshTokenService.revoke(rawRefreshToken)
+    }
+
+    private fun authenticatedSession(usuario: com.aterrizAR.backend.model.Usuario, rawRefreshToken: String): AuthenticatedSession {
+        val publicUser = usuario.toDTO()
+        return AuthenticatedSession(
+            response = LoginResponseDTO(
+                accessToken = jwtService.createToken(usuario, publicUser.role),
+                expiresIn = jwtService.expiresInSeconds,
+                user = publicUser,
+            ),
+            rawRefreshToken = rawRefreshToken,
+        )
+    }
 }
+
+data class AuthenticatedSession(
+    val response: LoginResponseDTO,
+    val rawRefreshToken: String,
+)
 
 class DuplicateEmailException : RuntimeException()
 class InvalidCredentialsException : RuntimeException()
