@@ -11,5 +11,5 @@ import jakarta.persistence.InheritanceType
 @Inheritance(strategy = InheritanceType.JOINED)
 open class Perfil(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    open val id: Long? = null,
 )

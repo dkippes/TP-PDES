@@ -8,8 +8,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 
 @Entity
+@Table(name = "usuario")
 class Usuario(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -21,7 +23,9 @@ class Usuario(
     val correo: String,
     @Column(nullable = false)
     val direccion: String,
-    @OneToOne(cascade = [CascadeType.ALL], optional = false)
+    @Column(nullable = false, name = "password_hash")
+    val passwordHash: String,
+    @OneToOne(cascade = [CascadeType.PERSIST], optional = false)
     @JoinColumn(name = "perfil_id", nullable = false, unique = true)
     val perfil: Perfil,
 )
