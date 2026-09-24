@@ -21,6 +21,8 @@ class Usuario(
     val correo: String,
     @Column(nullable = false)
     val direccion: String,
+    @Column(name = "password_hash", nullable = false, length = 60)
+    val passwordHash: String,
     @OneToOne(cascade = [CascadeType.ALL], optional = false)
     @JoinColumn(name = "perfil_id", nullable = false, unique = true)
     val perfil: Perfil,
