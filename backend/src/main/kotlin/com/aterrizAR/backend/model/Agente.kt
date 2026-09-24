@@ -9,4 +9,7 @@ class Agente(
     @ManyToOne(optional = false)
     @JoinColumn(name = "agencia_id", nullable = false)
     val agencia: Agencia,
-) : Perfil()
+) : Perfil() {
+    override val roleName: String
+        get() = "AGENTE"
+}
