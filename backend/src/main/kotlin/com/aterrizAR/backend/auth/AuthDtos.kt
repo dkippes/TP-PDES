@@ -1,8 +1,5 @@
 package com.aterrizAR.backend.auth
 
-import com.aterrizAR.backend.model.Administrador
-import com.aterrizAR.backend.model.Agente
-import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
 import jakarta.validation.constraints.Email
@@ -54,15 +51,8 @@ fun Usuario.toDTO(): PublicUserResponseDTO = PublicUserResponseDTO(
     apellido = apellido,
     correo = correo,
     direccion = direccion,
-    role = perfil.roleName(),
+    role = perfil.roleName,
 )
-
-private fun Perfil.roleName(): String = when (this) {
-    is Comprador -> "COMPRADOR"
-    is Agente -> "AGENTE"
-    is Administrador -> "ADMINISTRADOR"
-    else -> throw IllegalStateException("Unsupported profile type")
-}
 
 data class LoginResponseDTO(
     val accessToken: String,

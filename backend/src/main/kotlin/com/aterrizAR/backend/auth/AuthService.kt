@@ -1,6 +1,7 @@
 package com.aterrizAR.backend.auth
 
 import com.aterrizAR.backend.model.Comprador
+import com.aterrizAR.backend.model.Usuario
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -52,7 +53,7 @@ class AuthService(
         refreshTokenService.revoke(rawRefreshToken)
     }
 
-    private fun authenticatedSession(usuario: com.aterrizAR.backend.model.Usuario, rawRefreshToken: String): AuthenticatedSession {
+    private fun authenticatedSession(usuario: Usuario, rawRefreshToken: String): AuthenticatedSession {
         val publicUser = usuario.toDTO()
         return AuthenticatedSession(
             response = LoginResponseDTO(

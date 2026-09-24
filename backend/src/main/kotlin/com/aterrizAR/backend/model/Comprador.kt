@@ -10,4 +10,7 @@ class Comprador(
     val compras: MutableList<Compra> = mutableListOf(),
     @OneToMany(mappedBy = "comprador", cascade = [CascadeType.ALL])
     val valoraciones: MutableList<Valoracion> = mutableListOf(),
-) : Perfil()
+) : Perfil() {
+    override val roleName: String
+        get() = "COMPRADOR"
+}
