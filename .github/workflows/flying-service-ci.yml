@@ -1,19 +1,19 @@
-name: Backend CI
+name: Flying Service CI
 
 on:
   push:
     branches: [main, develop]
     paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+      - "flying.service/**"
+      - ".github/workflows/flying-service-ci.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+      - "flying.service/**"
+      - ".github/workflows/flying-service-ci.yml"
 
 concurrency:
-  group: backend-ci-${{ github.ref }}
+  group: flying-service-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: flying.service
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,8 +49,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-test-report
-          path: backend/build/reports/tests/test
+          name: flying-service-test-report
+          path: flying.service/build/reports/tests/test
 
   docker:
     name: Build Docker image
@@ -66,8 +66,8 @@ jobs:
       - name: Build image (no push)
         uses: docker/build-push-action@v6
         with:
-          context: ./backend
+          context: ./flying.service
           push: false
-          tags: aterrizar-backend:ci
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
+          tags: aterrizar-flying-service:ci
+          cache-from: type=gha,scope=flying-service
+          cache-to: type=gha,mode=max,scope=flying-service
