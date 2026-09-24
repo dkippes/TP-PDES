@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     apellido VARCHAR(255) NOT NULL,
     correo VARCHAR(255) NOT NULL UNIQUE,
     direccion VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(60) NOT NULL,
     perfil_id BIGINT NOT NULL UNIQUE REFERENCES perfil(id)
 );
 
