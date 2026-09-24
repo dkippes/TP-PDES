@@ -1,11 +1,11 @@
 import { type FormEvent, useState } from 'react'
-import { registrarUsuario } from '../api/auth'
+import { registrarUsuario, type UsuarioAutenticado } from '../api/auth'
 
-type RegisterPageProps = { onLogin: () => void }
+type RegisterPageProps = { onLogin: () => void; onRegistered: (user: UsuarioAutenticado) => void }
 
 const inputClassName = 'mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-100'
 
-export function RegisterPage({ onLogin }: RegisterPageProps) {
+export function RegisterPage({ onLogin, onRegistered }: RegisterPageProps) {
   const [form, setForm] = useState({ nombre: '', apellido: '', correo: '', direccion: '', password: '' })
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -16,8 +16,8 @@ export function RegisterPage({ onLogin }: RegisterPageProps) {
     setError('')
     setEnviando(true)
     try {
-      await registrarUsuario(form)
-      onLogin()
+      const user = await registrarUsuario(form)
+      onRegistered(user)
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'No se pudo crear la cuenta.')
     } finally {
