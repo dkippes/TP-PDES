@@ -1,9 +1,11 @@
 package com.aterrizAR.backend.paquete
 
 import com.aterrizAR.backend.agencia.AgenciaRepository
+import com.aterrizAR.backend.auth.JwtService
 import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Hotel
+import com.aterrizAR.backend.security.authenticatedAs
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,6 +18,7 @@ import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -41,6 +44,12 @@ class PaqueteControllerTest {
 
     @Autowired
     lateinit var restTemplate: RestTemplate
+
+    @Autowired
+    lateinit var jwtService: JwtService
+
+    private fun perform(request: MockHttpServletRequestBuilder) =
+        mockMvc.perform(request.authenticatedAs(jwtService))
 
     private lateinit var mockServer: MockRestServiceServer
     private lateinit var hotel: Hotel
@@ -81,7 +90,7 @@ class PaqueteControllerTest {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
 
-        mockMvc.perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()))
+        perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()))
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.destino").value("Bariloche"))
@@ -91,7 +100,7 @@ class PaqueteControllerTest {
     fun `POST paquetes rejects a flight without availability`() {
         expectVueloCheck(1, 0)
 
-        mockMvc.perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()))
+        perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()))
             .andExpect(status().isBadRequest)
     }
 
@@ -103,13 +112,13 @@ class PaqueteControllerTest {
              "fechaInicial":"2026-12-01","fechaFinal":"2026-12-10"}
         """.trimIndent()
 
-        mockMvc.perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+        perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
             .andExpect(status().isBadRequest)
     }
 
     @Test
     fun `GET paquetes id returns 404 when missing`() {
-        mockMvc.perform(get("/api/paquetes/999")).andExpect(status().isNotFound)
+        perform(get("/api/paquetes/999")).andExpect(status().isNotFound)
     }
 
     @Test
@@ -117,18 +126,18 @@ class PaqueteControllerTest {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
 
-        val createResult = mockMvc.perform(
+        val createResult = perform(
             post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()),
         ).andExpect(status().isCreated).andReturn()
 
         val id = "\"id\":(\\d+)".toRegex()
             .find(createResult.response.contentAsString)!!.groupValues[1]
 
-        mockMvc.perform(get("/api/paquetes/$id"))
+        perform(get("/api/paquetes/$id"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.destino").value("Bariloche"))
 
-        mockMvc.perform(get("/api/paquetes"))
+        perform(get("/api/paquetes"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
     }

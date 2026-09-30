@@ -75,6 +75,7 @@ These rules apply to both Kotlin services unless a local package already establi
 - Database connection settings use Spring's `SPRING_DATASOURCE_*` variables.
 - CORS is configured through `CORS_ALLOWED_ORIGIN`.
 - Normal application properties default Hibernate schema handling to `validate`; local Compose currently overrides the application backend to `update`. Do not assume development behavior is suitable for production.
+- Catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/packages, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
 
 ## Frontend conventions
 
