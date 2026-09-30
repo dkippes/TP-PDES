@@ -12,5 +12,5 @@ class Comprador(
     val valoraciones: MutableList<Valoracion> = mutableListOf(),
 ) : Perfil() {
     override val roleName: String
-        get() = "COMPRADOR"
+        get() = Roles.COMPRADOR
 }

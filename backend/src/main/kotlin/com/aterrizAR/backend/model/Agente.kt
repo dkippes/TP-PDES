@@ -11,5 +11,5 @@ class Agente(
     val agencia: Agencia,
 ) : Perfil() {
     override val roleName: String
-        get() = "AGENTE"
+        get() = Roles.AGENTE
 }

@@ -1,7 +1,7 @@
 package com.aterrizAR.backend.security
 
 import com.aterrizAR.backend.auth.ApiErrorResponseDTO
-import tools.jackson.databind.ObjectMapper
+import com.aterrizAR.backend.model.Roles
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
 import jakarta.servlet.http.HttpServletRequest
@@ -9,9 +9,10 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.convert.converter.Converter
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -32,10 +33,10 @@ import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import tools.jackson.databind.ObjectMapper
 import java.nio.charset.StandardCharsets
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
-import org.springframework.core.convert.converter.Converter
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +45,7 @@ class SecurityConfig(
     @Value("\${app.jwt.secret}") private val jwtSecret: String,
     @Value("\${app.cors.allowed-origin}") private val corsAllowedOrigin: String,
     private val objectMapper: ObjectMapper,
+    private val endpointRoleRules: List<EndpointRoleRule>,
 ) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http
@@ -52,17 +54,27 @@ class SecurityConfig(
         .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         .authorizeHttpRequests {
             it.requestMatchers(
+                HttpMethod.POST,
                 "/api/auth/register",
                 "/api/auth/login",
                 "/api/auth/refresh",
                 "/api/auth/logout",
-                "/api/health",
                 "/api/ping",
+            ).permitAll()
+            it.requestMatchers(
+                HttpMethod.GET,
+                "/api/health",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/v3/api-docs/**",
             ).permitAll()
-                .anyRequest().authenticated()
+            endpointRoleRules.forEach { rule ->
+                it.requestMatchers(rule.method, rule.path).hasAnyAuthority(
+                    *rule.roles.map(Roles::authority).toTypedArray(),
+                )
+            }
+            // New endpoints require an explicit method/path policy, not just a valid token.
+            it.anyRequest().denyAll()
         }
         .oauth2ResourceServer {
             it.jwt { jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()) }
@@ -101,8 +113,9 @@ class SecurityConfig(
     private fun jwtAuthenticationConverter(): Converter<Jwt, AbstractAuthenticationToken> {
         val converter = JwtAuthenticationConverter()
         converter.setJwtGrantedAuthoritiesConverter(Converter { jwt ->
-            jwt.getClaimAsString("role")
-                ?.let { role -> listOf<GrantedAuthority>(SimpleGrantedAuthority("ROLE_$role")) }
+            (jwt.claims["role"] as? String)
+                ?.takeIf { role -> role in Roles.supported }
+                ?.let { role -> listOf<GrantedAuthority>(SimpleGrantedAuthority(Roles.authority(role))) }
                 ?: emptyList()
         })
         return Converter { jwt -> converter.convert(jwt) }

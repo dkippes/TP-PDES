@@ -57,7 +57,7 @@ class AuthService(
         val publicUser = usuario.toDTO()
         return AuthenticatedSession(
             response = LoginResponseDTO(
-                accessToken = jwtService.createToken(usuario, publicUser.role),
+                accessToken = jwtService.createToken(usuario),
                 expiresIn = jwtService.expiresInSeconds,
                 user = publicUser,
             ),

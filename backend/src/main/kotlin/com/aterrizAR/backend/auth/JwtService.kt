@@ -1,5 +1,6 @@
 package com.aterrizAR.backend.auth
 
+import com.aterrizAR.backend.model.Roles
 import com.aterrizAR.backend.model.Usuario
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
@@ -23,7 +24,9 @@ class JwtService(
         require(!expiration.isNegative && !expiration.isZero) { "JWT expiration must be positive" }
     }
 
-    fun createToken(usuario: Usuario, role: String): String {
+    fun createToken(usuario: Usuario): String {
+        val role = usuario.perfil.roleName
+        require(role in Roles.supported) { "Cannot issue a token for an unsupported role" }
         val issuedAt = Instant.now()
         val claims = JwtClaimsSet.builder()
             .subject(requireNotNull(usuario.id).toString())
