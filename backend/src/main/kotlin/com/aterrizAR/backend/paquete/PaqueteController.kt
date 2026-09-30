@@ -4,6 +4,7 @@ import com.aterrizAR.backend.model.Paquete
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -20,6 +21,11 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/paquetes")
 @Tag(name = "Paquetes", description = "ABM de paquetes turísticos (2 vuelos + 1 hotel)")
+@SecurityRequirement(name = "bearerAuth")
+@ApiResponses(value = [
+    ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+    ApiResponse(responseCode = "403", description = "El rol no permite esta operación; escritura para ADMINISTRADOR o AGENTE"),
+])
 class PaqueteController(
     private val paqueteService: PaqueteService,
 ) {

@@ -1,5 +1,11 @@
 # React + TypeScript + Vite
 
+## Authentication integration
+
+Set `VITE_API_URL` to the application backend (default: `http://localhost:8080`). Registration calls `/api/auth/register` and redirects to login. Login receives a JWT and an HttpOnly refresh cookie; access tokens stay in memory. Reloading restores the session through `/api/auth/refresh`, and logout revokes the backend session.
+
+`npm test` runs authentication contract and refresh concurrency tests using Node's built-in test runner and the existing TypeScript compiler. CI runs these tests along with `npm run lint` and `npm run build`. Tests mock HTTP responses; manually verify cookie persistence with the frontend and backend running on the same hostname (for example, both on `localhost`).
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

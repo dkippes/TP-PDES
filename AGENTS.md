@@ -75,6 +75,7 @@ These rules apply to both Kotlin services unless a local package already establi
 - Database connection settings use Spring's `SPRING_DATASOURCE_*` variables.
 - CORS is configured through `CORS_ALLOWED_ORIGIN`.
 - Normal application properties default Hibernate schema handling to `validate`; local Compose currently overrides the application backend to `update`. Do not assume development behavior is suitable for production.
+- Catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/packages, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
 
 ## Frontend conventions
 
@@ -86,7 +87,9 @@ These rules apply to both Kotlin services unless a local package already establi
 - Use `import.meta.env` for Vite environment variables. The main backend base URL is `VITE_API_URL`.
 - Prefer the established Tailwind approach for UI styling. Avoid introducing a second styling system without an explicit reason.
 - Preserve the ESLint rules for TypeScript, React Hooks, and React Refresh.
-- There is currently no frontend test runner configured. If adding one, document the command and CI integration in the same change.
+- Authentication integration tests use Node's built-in test runner through `npm test`; CI runs them alongside lint/build.
+- The frontend uses the existing `/api/auth/register`, `login`, `refresh`, and `logout` endpoints. Registration creates an account and redirects to login.
+- Keep access tokens in memory. Restore and renew sessions through the HttpOnly refresh cookie with `credentials: 'include'`; do not trust a user object in localStorage as authentication.
 
 ## Local development
 
@@ -109,6 +112,8 @@ Expected local services:
 
 Compose maintains separate PostgreSQL databases and volumes for the application backend and the flying service. Do not couple their schemas or access one service's database directly from the other service.
 
+With the `dev` Spring profile (Compose's default), `DevUsersSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR) and `usuario@gmail.com` (COMPRADOR), both with password `12345678`. Existing accounts are preserved; deleted demo accounts are recreated on the next startup. The seeder is disabled outside `dev`.
+
 ## Build and verification commands
 
 Run the smallest relevant checks first, then the complete checks for each touched application.
@@ -119,6 +124,7 @@ Run the smallest relevant checks first, then the complete checks for each touche
 cd front
 npm ci
 npm run lint
+npm test
 npm run build
 ```
 
@@ -144,7 +150,7 @@ cd flying.service
 
 On Windows without a POSIX shell, use `gradlew.bat` instead of `./gradlew`.
 
-CI currently covers frontend lint/build and application-backend test/build checks. `flying.service` has no dedicated CI workflow.
+CI covers frontend lint/test/build, application-backend test/build, and flying-service test/build checks.
 
 ## Environment and secrets
 
@@ -156,7 +162,7 @@ Use `.env.example`, `docker-compose.yml`, and each service's `application.proper
 - frontend API addresses: `VITE_API_URL`; Compose also defines `VITE_FLYING_SERVICE_URL`, but the frontend does not currently consume it
 - browser access: `CORS_ALLOWED_ORIGIN`, derived by Compose from `FRONT_PORT`
 
-`JWT_SECRET` and `JWT_EXPIRATION_MS` are present in project documentation/Compose configuration, but authentication code was not identified during the initial repository survey. Treat JWT, Datadog, Grafana, and AWS as planned or unverified until source code and deployment configuration establish them.
+JWT authentication, role authorization, and rotating refresh sessions are implemented under `backend/.../auth/` and `security/`. Their settings include `JWT_SECRET`, `JWT_EXPIRATION_MS`, `REFRESH_TOKEN_EXPIRATION_MS`, and `REFRESH_COOKIE_*`. Treat Datadog, Grafana, and AWS as planned or unverified until source code and deployment configuration establish them.
 
 ## Change checklist
 
