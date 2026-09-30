@@ -9,7 +9,9 @@ import jakarta.persistence.InheritanceType
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-open class Perfil(
+abstract class Perfil(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-)
+    open val id: Long? = null,
+) {
+    abstract val roleName: String
+}
