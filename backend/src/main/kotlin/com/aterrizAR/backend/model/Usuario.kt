@@ -8,8 +8,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 
 @Entity
+@Table(name = "usuario")
 class Usuario(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
