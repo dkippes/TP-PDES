@@ -45,6 +45,8 @@ El panel del proyecto está en [SonarQube Cloud — TP-PDES](https://sonarcloud.
 
 Sonar está integrado en GitHub Actions mediante el workflow [Code Quality](.github/workflows/sonar.yml). Se ejecuta automáticamente al hacer push a `develop` y al abrir o actualizar un PR dirigido a esa rama. El check `Sonar Quality Gate` ejecuta los tests, genera cobertura JaCoCo de ambos servicios, analiza backend, flying-service y frontend y falla si no se cumple el Quality Gate.
 
-Las ejecuciones se pueden ver en [GitHub Actions — Code Quality](https://github.com/dkippes/TP-PDES/actions/workflows/sonar.yml). La integración requiere el repository secret `SONAR_TOKEN` y Automatic Analysis desactivado en SonarCloud. El frontend tiene análisis estático, pero sus tests todavía no generan cobertura LCOV.
+Las ejecuciones se pueden ver en [GitHub Actions — Code Quality](https://github.com/dkippes/TP-PDES/actions/workflows/sonar.yml). La integración requiere el repository secret `SONAR_TOKEN` y Automatic Analysis desactivado en SonarCloud.
+
+Se exige **80% de cobertura total de líneas en backend y flying-service, cada uno por separado**, mediante JaCoCo. `check`, `build` y CI fallan si no se cumple. El frontend queda fuera del cálculo de cobertura por ahora, pero mantiene análisis estático, lint, tests y build.
 
 Después de subir estos archivos y completar el primer análisis, se puede exigir `Sonar Quality Gate` en la protección de `develop` para bloquear merges que no cumplan los criterios de calidad. Más detalles en [Docs/sonar.md](Docs/sonar.md).

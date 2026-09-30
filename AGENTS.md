@@ -154,7 +154,7 @@ CI covers frontend lint/test/build, application-backend test/build, and flying-s
 
 Code quality uses SonarQube Cloud project `dkippes_TP-PDES` in organization `dkippes` for the three applications. Root `sonar-project.properties` defines the scope; `.github/workflows/sonar.yml` runs on pushes/PR targeting `develop` without path filters and publishes the `Sonar Quality Gate` check. Setup and limitations are documented in `Docs/sonar.md`. Configure GitHub Actions secret `SONAR_TOKEN`; disable Sonar automatic analysis and align its main branch with `develop`.
 
-Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat test jacocoTestReport sonarDependencies` generates XML/HTML coverage and exports dependency JARs for the root scanner. Frontend tests currently do not produce LCOV; do not claim frontend coverage or exclude application code to satisfy the gate.
+Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat check sonarDependencies` generates XML/HTML coverage, enforces at least 80% total LINE COVEREDRATIO separately for each service, and exports dependency JARs for the root scanner. `check`/`build` depend on `jacocoTestCoverageVerification`; no Kotlin classes are excluded. Frontend coverage is intentionally deferred: `sonar.coverage.exclusions=front/src/**` excludes only coverage, not static analysis. Keep frontend lint/test/build; do not claim frontend coverage until LCOV is configured.
 
 ## Environment and secrets
 

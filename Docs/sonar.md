@@ -35,9 +35,11 @@ Ambos servicios usan JaCoCo 0.8.15. Al ejecutar los tests, Gradle genera:
 
 La tarea `sonarDependencies` copia los JAR de las dependencias de test/runtime a `build/sonar/libraries`, que usa el scanner para resolver tipos Kotlin.
 
-El frontend tiene cinco tests de contrato que cargan módulos transpilados mediante URLs `data:`. No generan un LCOV con rutas a las fuentes TypeScript. El frontend sí recibe análisis estático, pero no se declara ni se inventa cobertura: sus líneas sin reporte pueden reducir la cobertura total del proyecto y hacer fallar el Quality Gate. Para medirlas se necesita instrumentar tests con mapeo a las fuentes y producir LCOV.
+Se exige **al menos 80% de cobertura total de líneas en cada servicio por separado** mediante `jacocoTestCoverageVerification`. No es un promedio entre servicios ni una condición limitada al código nuevo. No se excluyen clases Kotlin. La tarea `check` depende de esa verificación, por lo que `check` y `build` fallan si cualquiera de los servicios queda por debajo del mínimo. Code Quality ejecuta `check` para ambos servicios antes del scanner; sus workflows de CI también lo verifican al ejecutar `build`.
 
-Se usa el Quality Gate configurado en Sonar (por defecto, Sonar way). Esta integración no modifica sus umbrales ni excluye lógica de aplicación para ocultar incumplimientos.
+El frontend tiene cinco tests de contrato que cargan módulos transpilados mediante URLs `data:`. No generan un LCOV con rutas a las fuentes TypeScript. Por decisión del proyecto, **no se exige cobertura frontend por ahora**: `sonar.coverage.exclusions=front/src/**` lo deja fuera únicamente de las métricas de cobertura, no del análisis estático. Lint, tests y build siguen siendo obligatorios. Para medirlo más adelante se necesita generar LCOV y retirar esa exclusión.
+
+Se usa además el Quality Gate configurado en Sonar (por defecto, Sonar way). Sus métricas de cobertura combinan ambos servicios y pueden considerar solo código nuevo en PR; por eso el mínimo independiente de cada servicio se verifica en Gradle. Esta integración no modifica los umbrales del gate remoto.
 
 ## Verificación local (PowerShell)
 
@@ -62,7 +64,7 @@ Estos comandos verifican los tests/build y generan los reportes; no publican an�
 sonar-scanner
 ```
 
-Verificación local de esta integración: backend 62 tests y flying-service 15 tests pasan con JaCoCo y build; frontend lint, 5 tests y build pasan. Se validó el YAML y que las rutas de binarios/reportes existan. El análisis remoto y el Quality Gate no se ejecutaron desde esta sesión porque requieren `SONAR_TOKEN`.
+Para verificar únicamente el mínimo de cobertura en cualquiera de los servicios, ejecutá `gradlew.bat jacocoTestCoverageVerification` (o `./gradlew jacocoTestCoverageVerification` en Linux). La tarea ejecuta los tests y genera el reporte antes de comprobar el 80%.
 
 ## Referencias
 

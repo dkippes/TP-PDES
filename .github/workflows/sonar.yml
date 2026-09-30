@@ -58,13 +58,13 @@ jobs:
         working-directory: backend
         run: |
           chmod +x gradlew
-          ./gradlew test jacocoTestReport sonarDependencies --no-daemon
+          ./gradlew check sonarDependencies --no-daemon
 
       - name: Flying service tests, coverage and analysis dependencies
         working-directory: flying.service
         run: |
           chmod +x gradlew
-          ./gradlew test jacocoTestReport sonarDependencies --no-daemon
+          ./gradlew check sonarDependencies --no-daemon
 
       - name: Frontend checks
         working-directory: front

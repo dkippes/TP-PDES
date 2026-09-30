@@ -61,6 +61,23 @@ tasks.jacocoTestReport {
 	}
 }
 
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.jacocoTestReport)
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
 // The root SonarScanner CLI needs dependency JARs for Kotlin semantic analysis.
 tasks.register<Sync>("sonarDependencies") {
 	from(configurations.testRuntimeClasspath)
