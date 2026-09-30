@@ -43,6 +43,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Test authentication integration
+        run: npm test
+
   docker:
     name: Build Docker image
     needs: build

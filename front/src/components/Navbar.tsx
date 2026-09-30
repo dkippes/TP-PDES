@@ -5,9 +5,10 @@ type NavbarProps = {
   onNavigate: (view: View) => void
   user: UsuarioAutenticado | null
   onLogout: () => void
+  busy: boolean
 }
 
-export function Navbar({ onNavigate, user, onLogout }: NavbarProps) {
+export function Navbar({ onNavigate, user, onLogout, busy }: NavbarProps) {
   return (
     <header className="border-b border-slate-200 bg-white">
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4" aria-label="Navegación principal">
@@ -17,12 +18,12 @@ export function Navbar({ onNavigate, user, onLogout }: NavbarProps) {
           {user ? (
             <>
               <span className="text-slate-600">Hola, {user.nombre}</span>
-              <button className="rounded-md bg-slate-700 px-3 py-2 text-white hover:bg-slate-800" type="button" onClick={onLogout}>Cerrar sesión</button>
+              <button className="rounded-md bg-slate-700 px-3 py-2 text-white hover:bg-slate-800 disabled:opacity-50" type="button" onClick={onLogout} disabled={busy}>Cerrar sesión</button>
             </>
           ) : (
             <>
-              <button className="text-slate-600 hover:text-sky-700" type="button" onClick={() => onNavigate('login')}>Iniciar sesión</button>
-              <button className="rounded-md bg-sky-700 px-3 py-2 text-white hover:bg-sky-800" type="button" onClick={() => onNavigate('register')}>Registrarse</button>
+              <button className="text-slate-600 hover:text-sky-700" type="button" onClick={() => onNavigate('login')} disabled={busy}>Iniciar sesión</button>
+              <button className="rounded-md bg-sky-700 px-3 py-2 text-white hover:bg-sky-800" type="button" onClick={() => onNavigate('register')} disabled={busy}>Registrarse</button>
             </>
           )}
         </div>
