@@ -152,6 +152,10 @@ On Windows without a POSIX shell, use `gradlew.bat` instead of `./gradlew`.
 
 CI covers frontend lint/test/build, application-backend test/build, and flying-service test/build checks.
 
+Code quality uses SonarQube Cloud project `dkippes_TP-PDES` in organization `dkippes` for the three applications. Root `sonar-project.properties` defines the scope; `.github/workflows/sonar.yml` runs on pushes/PR targeting `develop` without path filters and publishes the `Sonar Quality Gate` check. Setup and limitations are documented in `Docs/sonar.md`. Configure GitHub Actions secret `SONAR_TOKEN`; disable Sonar automatic analysis and align its main branch with `develop`.
+
+Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat test jacocoTestReport sonarDependencies` generates XML/HTML coverage and exports dependency JARs for the root scanner. Frontend tests currently do not produce LCOV; do not claim frontend coverage or exclude application code to satisfy the gate.
+
 ## Environment and secrets
 
 Use `.env.example`, `docker-compose.yml`, and each service's `application.properties` together as the environment-variable sources of truth. Keep real credentials out of version control. Relevant variable groups include:
