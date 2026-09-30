@@ -111,6 +111,8 @@ Expected local services:
 
 Compose maintains separate PostgreSQL databases and volumes for the application backend and the flying service. Do not couple their schemas or access one service's database directly from the other service.
 
+With the `dev` Spring profile (Compose's default), `DevUsersSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR) and `usuario@gmail.com` (COMPRADOR), both with password `12345678`. Existing accounts are preserved; deleted demo accounts are recreated on the next startup. The seeder is disabled outside `dev`.
+
 ## Build and verification commands
 
 Run the smallest relevant checks first, then the complete checks for each touched application.
