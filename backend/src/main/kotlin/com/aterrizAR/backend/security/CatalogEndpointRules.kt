@@ -7,12 +7,6 @@ import org.springframework.http.HttpMethod
 
 @Configuration(proxyBeanMethods = false)
 class CatalogEndpointRules {
-    @Bean fun agenciaListRule() = EndpointRoleRule(HttpMethod.GET, "/api/agencias", Roles.supported)
-    @Bean fun agenciaDetailRule() = EndpointRoleRule(HttpMethod.GET, "/api/agencias/{id}", Roles.supported)
-    @Bean fun agenciaCreateRule() = EndpointRoleRule(HttpMethod.POST, "/api/agencias", setOf(Roles.ADMINISTRADOR))
-    @Bean fun agenciaUpdateRule() = EndpointRoleRule(HttpMethod.PUT, "/api/agencias/{id}", setOf(Roles.ADMINISTRADOR, Roles.AGENTE))
-    @Bean fun agenciaDeleteRule() = EndpointRoleRule(HttpMethod.DELETE, "/api/agencias/{id}", setOf(Roles.ADMINISTRADOR))
-
     @Bean fun hotelListRule() = EndpointRoleRule(HttpMethod.GET, "/api/hoteles", Roles.supported)
     @Bean fun hotelDetailRule() = EndpointRoleRule(HttpMethod.GET, "/api/hoteles/{id}", Roles.supported)
     @Bean fun hotelCreateRule() = EndpointRoleRule(HttpMethod.POST, "/api/hoteles", setOf(Roles.ADMINISTRADOR))

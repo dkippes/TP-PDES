@@ -30,7 +30,7 @@ class CatalogAuthorizationTest {
 
     @Test
     fun `catalog endpoints require authentication`() {
-        for (catalog in listOf("hoteles", "paquetes", "agencias")) {
+        for (catalog in listOf("hoteles", "paquetes")) {
             for ((method, path) in listOf(
                 HttpMethod.GET to "/api/$catalog",
                 HttpMethod.GET to "/api/$catalog/999",
@@ -46,7 +46,7 @@ class CatalogAuthorizationTest {
     @Test
     fun `all supported roles may read lists and details`() {
         for (perfil in profiles) {
-            for (catalog in listOf("hoteles", "paquetes", "agencias")) {
+            for (catalog in listOf("hoteles", "paquetes")) {
                 mockMvc.perform(get("/api/$catalog").authenticatedAs(jwtService, perfil))
                     .andExpect(status().isOk)
                 mockMvc.perform(get("/api/$catalog/999").authenticatedAs(jwtService, perfil))
@@ -56,10 +56,9 @@ class CatalogAuthorizationTest {
     }
 
     @Test
-    fun `buyers cannot write catalogs and agents cannot write hotels or create or delete agencies`() {
+    fun `buyers cannot write either catalog and agents cannot write hotels`() {
         for ((catalog, forbiddenProfiles) in mapOf(
             "hoteles" to profiles.take(2),
-            "agencias" to profiles.take(2),
             "paquetes" to profiles.take(1),
         )) {
             for (perfil in forbiddenProfiles) {
@@ -68,7 +67,6 @@ class CatalogAuthorizationTest {
                     HttpMethod.PUT to "/api/$catalog/999",
                     HttpMethod.DELETE to "/api/$catalog/999",
                 )) {
-                    if (catalog == "agencias" && perfil is Agente && method == HttpMethod.PUT) continue
                     mockMvc.perform(request(method, path).authenticatedAs(jwtService, perfil))
                         .andExpect(status().isForbidden)
                 }
@@ -77,10 +75,9 @@ class CatalogAuthorizationTest {
     }
 
     @Test
-    fun `agents may write packages and administrators may write all catalogs`() {
+    fun `agents may write packages and administrators may write both catalogs`() {
         for ((catalog, allowedProfiles) in mapOf(
             "hoteles" to profiles.takeLast(1),
-            "agencias" to profiles.takeLast(1),
             "paquetes" to profiles.takeLast(2),
         )) {
             for (perfil in allowedProfiles) {
@@ -97,7 +94,7 @@ class CatalogAuthorizationTest {
 
     @Test
     fun `unlisted methods and nested paths remain denied for administrators`() {
-        for (catalog in listOf("hoteles", "paquetes", "agencias")) {
+        for (catalog in listOf("hoteles", "paquetes")) {
             mockMvc.perform(request(HttpMethod.PATCH, "/api/$catalog/999").authenticatedAs(jwtService))
                 .andExpect(status().isForbidden)
             mockMvc.perform(get("/api/$catalog/999/private").authenticatedAs(jwtService))
@@ -107,7 +104,7 @@ class CatalogAuthorizationTest {
 
     @Test
     fun `OpenAPI documents catalog authentication and access errors`() {
-        for (catalog in listOf("hoteles", "paquetes", "agencias")) {
+        for (catalog in listOf("hoteles", "paquetes")) {
             for ((path, methods) in mapOf(
                 "/api/$catalog" to listOf("get", "post"),
                 "/api/$catalog/{id}" to listOf("get", "put", "delete"),
