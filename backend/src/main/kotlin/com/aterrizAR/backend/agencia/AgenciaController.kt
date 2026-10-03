@@ -1,12 +1,16 @@
 package com.aterrizAR.backend.agencia
 
+import com.aterrizAR.backend.security.UsuarioAutenticado
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -57,8 +61,11 @@ class AgenciaController(private val agenciaService: AgenciaService) {
         ApiResponse(responseCode = "404", description = "Agencia no encontrada"),
         ApiResponse(responseCode = "409", description = "Email duplicado"),
     ])
-    fun update(@PathVariable id: Long, @Valid @RequestBody request: AgenciaRequestDTO): AgenciaResponseDTO =
-        agenciaService.update(id, request).toDTO()
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: AgenciaRequestDTO,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt,
+    ): AgenciaResponseDTO = agenciaService.update(id, request, UsuarioAutenticado.from(jwt)).toDTO()
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

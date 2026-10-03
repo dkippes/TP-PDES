@@ -66,6 +66,13 @@ class AgenciaAuthorizationTest {
     }
 
     @Test
+    fun `agent gets 403 rather than 404 for a missing agency`() {
+        val propia = agencia("own@example.com")
+        val token = jwtService.createToken(usuario(Agente(propia)))
+        update(999L, token).andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `administrator may update any agency`() {
         val otra = agencia("other@example.com")
         val token = jwtService.createToken(usuario(Administrador()))

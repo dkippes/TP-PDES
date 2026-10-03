@@ -4,6 +4,7 @@ import com.aterrizAR.backend.model.Agencia
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.util.Locale
 
 data class AgenciaRequestDTO(
     @field:NotBlank @field:Size(max = 255)
@@ -11,7 +12,10 @@ data class AgenciaRequestDTO(
     @field:NotBlank @field:Email @field:Size(max = 255)
     val email: String,
 ) {
-    fun toModel(): Agencia = Agencia(nombre = nombre, email = email)
+    fun toModel(): Agencia = Agencia(
+        nombre = nombre.trim(),
+        email = email.trim().lowercase(Locale.ROOT),
+    )
 }
 
 data class AgenciaResponseDTO(

@@ -1,12 +1,13 @@
 package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.JwtService
+import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.security.authenticatedAs
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
@@ -32,25 +33,37 @@ class AgenciaControllerTest {
     @Autowired
     lateinit var jwtService: JwtService
 
-    private fun perform(request: MockHttpServletRequestBuilder) =
-        mockMvc.perform(request.authenticatedAs(jwtService))
-
     @AfterEach
     fun cleanUp() {
         agenciaRepository.deleteAll()
     }
 
-    private fun agenciaJson(nombre: String = "Sheraton") = """
-        {"nombre":"$nombre","email":"agencia@example.com"}
+    private fun perform(request: MockHttpServletRequestBuilder) =
+        mockMvc.perform(request.authenticatedAs(jwtService))
+
+    private fun agenciaJson(nombre: String = "Viajes Sur") = """
+        {"nombre":"$nombre","email":"ventas@viajessur.com"}
     """.trimIndent()
 
     @Test
+    fun `POST agencias creates an agencia`() {
+        perform(post("/api/agencias").contentType(MediaType.APPLICATION_JSON).content(agenciaJson()))
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.nombre").value("Viajes Sur"))
+            .andExpect(jsonPath("$.email").value("ventas@viajessur.com"))
+            .andExpect(jsonPath("$.paquetes").doesNotExist())
+            .andExpect(jsonPath("$.compras").doesNotExist())
+    }
+
+    @Test
     fun `POST and PUT reject invalid fields`() {
-        val agencia = agenciaRepository.save(com.aterrizAR.backend.model.Agencia(nombre = "Agencia", email = "valid@example.com"))
+        val agencia = agenciaRepository.save(Agencia(nombre = "Viajes Sur", email = "valid@example.com"))
         for (body in listOf(
-            """{"nombre":"Agencia","email":""}""",
-            """{"nombre":"Agencia","email":"invalid"}""",
+            """{"nombre":"","email":"valid@example.com"}""",
             """{"nombre":"${"a".repeat(256)}","email":"valid@example.com"}""",
+            """{"nombre":"Viajes Sur","email":""}""",
+            """{"nombre":"Viajes Sur","email":"invalid"}""",
         )) {
             perform(post("/api/agencias").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest)
@@ -61,8 +74,8 @@ class AgenciaControllerTest {
 
     @Test
     fun `duplicate email returns 409 on create and update`() {
-        val first = agenciaRepository.save(com.aterrizAR.backend.model.Agencia(nombre = "Primera", email = "agencia@example.com"))
-        val second = agenciaRepository.save(com.aterrizAR.backend.model.Agencia(nombre = "Segunda", email = "second@example.com"))
+        val first = agenciaRepository.save(Agencia(nombre = "Primera", email = "ventas@viajessur.com"))
+        val second = agenciaRepository.save(Agencia(nombre = "Segunda", email = "second@example.com"))
         perform(post("/api/agencias").contentType(MediaType.APPLICATION_JSON).content(agenciaJson()))
             .andExpect(status().isConflict)
         perform(put("/api/agencias/${second.id}").contentType(MediaType.APPLICATION_JSON).content(agenciaJson()))
@@ -74,34 +87,15 @@ class AgenciaControllerTest {
     }
 
     @Test
+    fun `GET agencias id returns 404 when missing`() {
+        perform(get("/api/agencias/999")).andExpect(status().isNotFound)
+    }
+
+    @Test
     fun `update and delete missing agency return 404`() {
         perform(put("/api/agencias/999").contentType(MediaType.APPLICATION_JSON).content(agenciaJson()))
             .andExpect(status().isNotFound)
         perform(delete("/api/agencias/999")).andExpect(status().isNotFound)
-    }
-
-    @Test
-    fun `POST agencias creates a agencia`() {
-        perform(post("/api/agencias").contentType(MediaType.APPLICATION_JSON).content(agenciaJson()))
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.nombre").value("Sheraton"))
-            .andExpect(jsonPath("$.email").value("agencia@example.com"))
-            .andExpect(jsonPath("$.paquetes").doesNotExist())
-            .andExpect(jsonPath("$.compras").doesNotExist())
-    }
-
-    @Test
-    fun `POST agencias rejects blank required fields`() {
-        val invalidJson = """{"nombre":"","email":"agencia@example.com"}"""
-
-        perform(post("/api/agencias").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
-            .andExpect(status().isBadRequest)
-    }
-
-    @Test
-    fun `GET agencias id returns 404 when missing`() {
-        perform(get("/api/agencias/999")).andExpect(status().isNotFound)
     }
 
     @Test
@@ -115,16 +109,16 @@ class AgenciaControllerTest {
 
         perform(get("/api/agencias/$id"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.nombre").value("Sheraton"))
+            .andExpect(jsonPath("$.nombre").value("Viajes Sur"))
 
         perform(get("/api/agencias"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
         perform(
-            put("/api/agencias/$id").contentType(MediaType.APPLICATION_JSON).content(agenciaJson(nombre = "Hilton")),
+            put("/api/agencias/$id").contentType(MediaType.APPLICATION_JSON).content(agenciaJson(nombre = "Viajes Norte")),
         ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.nombre").value("Hilton"))
+            .andExpect(jsonPath("$.nombre").value("Viajes Norte"))
 
         perform(delete("/api/agencias/$id")).andExpect(status().isNoContent)
 
