@@ -1,5 +1,17 @@
 # React + TypeScript + Vite
 
+## Gherkin de registro y login
+
+Desde esta carpeta, ejecutá `npm run test:bdd` para probar los formularios con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
+
+Para ver las acciones en Chrome y avanzar paso a paso con el inspector:
+
+```powershell
+npm run test:bdd:debug
+```
+
+Usá **Step over** para avanzar o **Resume** para continuar. Más detalles en [la guía de Gherkin](../Docs/gherkin.md).
+
 ## Authentication integration
 
 Set `VITE_API_URL` to the application backend (default: `http://localhost:8080`). Registration calls `/api/auth/register` and redirects to login. Login receives a JWT and an HttpOnly refresh cookie; access tokens stay in memory. Reloading restores the session through `/api/auth/refresh`, and logout revokes the backend session.
