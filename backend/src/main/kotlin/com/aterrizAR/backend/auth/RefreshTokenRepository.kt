@@ -16,4 +16,12 @@ interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {
     @Modifying
     @Query("UPDATE RefreshToken token SET token.revokedAt = :revokedAt WHERE token.familyId = :familyId AND token.revokedAt IS NULL")
     fun revokeActiveByFamilyId(@Param("familyId") familyId: UUID, @Param("revokedAt") revokedAt: Instant): Int
+
+    @Modifying
+    @Query("UPDATE RefreshToken token SET token.revokedAt = :revokedAt WHERE token.usuario.id = :usuarioId AND token.revokedAt IS NULL")
+    fun revokeActiveByUsuarioId(@Param("usuarioId") usuarioId: Long, @Param("revokedAt") revokedAt: Instant): Int
+
+    @Modifying
+    @Query("DELETE FROM RefreshToken token WHERE token.usuario.id = :usuarioId")
+    fun deleteByUsuarioId(@Param("usuarioId") usuarioId: Long): Int
 }

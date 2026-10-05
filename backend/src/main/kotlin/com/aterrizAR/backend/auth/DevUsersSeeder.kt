@@ -4,6 +4,7 @@ import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
 import org.springframework.security.crypto.password.PasswordEncoder

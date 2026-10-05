@@ -1,13 +1,13 @@
 package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.JwtService
-import com.aterrizAR.backend.auth.UsuarioRepository
 import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Agente
 import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

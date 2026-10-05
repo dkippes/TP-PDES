@@ -2,10 +2,10 @@ package com.aterrizAR.backend.auth
 
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
+import com.aterrizAR.backend.usuario.normalizarCorreo
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import java.util.Locale
 
 data class RegisterRequestDTO(
     @field:NotBlank @field:Size(max = 255)
@@ -22,7 +22,7 @@ data class RegisterRequestDTO(
     fun toModel(passwordHash: String, perfil: Perfil): Usuario = Usuario(
         nombre = nombre.trim(),
         apellido = apellido.trim(),
-        correo = correo.trim().lowercase(Locale.ROOT),
+        correo = normalizarCorreo(correo),
         direccion = direccion.trim(),
         passwordHash = passwordHash,
         perfil = perfil,
