@@ -126,7 +126,10 @@ npm ci
 npm run lint
 npm test
 npm run build
+npm run test:bdd
 ```
+
+Gherkin tests require preinstalled Chrome and port 15174 to be free. See `Docs/gherkin.md` for scope and reports.
 
 Use `npm run dev` for local Vite development and `npm run preview` to inspect a production build.
 
@@ -161,6 +164,14 @@ Each service `Dockerfile` is multi-stage: `target: dev` (used by `docker-compose
 Code quality uses SonarQube Cloud project `dkippes_TP-PDES` in organization `dkippes` for the three applications. Root `sonar-project.properties` defines the scope; `.github/workflows/sonar.yml` runs on pushes/PR targeting `develop` without path filters and publishes the `Sonar Quality Gate` check. Setup and limitations are documented in `Docs/sonar.md`. Configure GitHub Actions secret `SONAR_TOKEN`; disable Sonar automatic analysis and align its main branch with `develop`.
 
 Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat check sonarDependencies` generates XML/HTML coverage, enforces at least 80% total LINE COVEREDRATIO separately for each service, and exports dependency JARs for the root scanner. `check`/`build` depend on `jacocoTestCoverageVerification`; no Kotlin classes are excluded. Frontend coverage is intentionally deferred: `sonar.coverage.exclusions=front/src/**` excludes only coverage, not static analysis. Keep frontend lint/test/build; do not claim frontend coverage until LCOV is configured.
+
+## Frontend behavior tests (Gherkin)
+
+Registration and login have Spanish Gherkin scenarios under `front/bdd/`, executed with `playwright-bdd` and preinstalled Chrome. `front/playwright.bdd.config.ts` starts only Vite on port 15174. Step definitions intercept API requests with Playwright routes; these tests verify frontend behavior with simulated responses, not backend authentication or persistence.
+
+Run `npm run test:bdd` from `front/`. It typechecks steps, generates Playwright tests from features, and runs them. Generated `.features-gen/` is ignored. Reports are saved in `front/playwright-bdd-report/` and failures in `front/test-results-bdd/`. See `Docs/gherkin.md` for scope and commands. No Java, Docker or backend startup is needed.
+
+Use `npm run test:bdd:debug` to open Chrome and the Playwright Inspector and step through browser actions. This script includes `--debug` directly rather than relying on npm argument forwarding.
 
 ## Environment and secrets
 

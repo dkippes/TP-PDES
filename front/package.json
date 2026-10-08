@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "test:bdd": "tsc -p tsconfig.bdd.json && bddgen --config playwright.bdd.config.ts && playwright test --config playwright.bdd.config.ts",
+    "test:bdd:debug": "tsc -p tsconfig.bdd.json && bddgen --config playwright.bdd.config.ts && playwright test --config playwright.bdd.config.ts --debug",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,6 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
@@ -25,6 +28,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
+    "playwright-bdd": "^9.2.1",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.65.0",
