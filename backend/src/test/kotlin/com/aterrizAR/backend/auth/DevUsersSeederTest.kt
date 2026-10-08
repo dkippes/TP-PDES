@@ -1,6 +1,7 @@
 package com.aterrizAR.backend.auth
 
 import com.aterrizAR.backend.model.Roles
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue

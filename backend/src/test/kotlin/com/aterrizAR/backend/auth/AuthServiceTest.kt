@@ -1,5 +1,6 @@
 package com.aterrizAR.backend.auth
 
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

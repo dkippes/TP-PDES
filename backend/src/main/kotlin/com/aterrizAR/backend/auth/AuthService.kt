@@ -2,11 +2,12 @@ package com.aterrizAR.backend.auth
 
 import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Usuario
+import com.aterrizAR.backend.usuario.UsuarioRepository
+import com.aterrizAR.backend.usuario.normalizarCorreo
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.Locale
 
 @Service
 class AuthService(
@@ -35,7 +36,7 @@ class AuthService(
 
     @Transactional
     fun login(request: LoginRequestDTO): AuthenticatedSession {
-        val usuario = usuarioRepository.findByCorreo(request.correo.trim().lowercase(Locale.ROOT))
+        val usuario = usuarioRepository.findByCorreo(normalizarCorreo(request.correo))
         if (usuario == null || !passwordEncoder.matches(request.password, usuario.passwordHash)) {
             throw InvalidCredentialsException()
         }

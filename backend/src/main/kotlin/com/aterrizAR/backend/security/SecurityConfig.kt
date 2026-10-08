@@ -4,6 +4,7 @@ import com.aterrizAR.backend.auth.ApiErrorResponseDTO
 import com.aterrizAR.backend.model.Roles
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
+import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
@@ -53,6 +54,7 @@ class SecurityConfig(
         .cors { it.configurationSource(corsConfigurationSource()) }
         .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         .authorizeHttpRequests {
+            it.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
             it.requestMatchers(
                 HttpMethod.POST,
                 "/api/auth/register",
