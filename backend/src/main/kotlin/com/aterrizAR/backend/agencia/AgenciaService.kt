@@ -2,8 +2,6 @@ package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.UsuarioRepository
 import com.aterrizAR.backend.model.Agencia
-import com.aterrizAR.backend.model.Agente
-import com.aterrizAR.backend.model.Roles
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
@@ -55,9 +53,8 @@ class AgenciaService(
     }
 
     private fun validateUpdatePermission(id: Long, usuario: UsuarioAutenticado) {
-        if (usuario.rol == Roles.ADMINISTRADOR) return
-        val agente = usuarioRepository.findByIdOrNull(usuario.id)?.perfil as? Agente
-        if (agente?.agencia?.id != id) {
+        val perfil = usuarioRepository.findByIdOrNull(usuario.id)?.perfil
+        if (perfil?.gestionaAgencia(id) != true) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Solo puede modificar su propia agencia")
         }
     }

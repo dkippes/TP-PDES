@@ -14,4 +14,6 @@ abstract class Perfil(
     open val id: Long? = null,
 ) {
     abstract val roleName: String
+
+    open fun gestionaAgencia(agenciaId: Long): Boolean = false
 }

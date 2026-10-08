@@ -2,6 +2,7 @@ package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.UsuarioRepository
 import com.aterrizAR.backend.hotel.HotelRepository
+import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Agente
 import com.aterrizAR.backend.model.Hotel
 import com.aterrizAR.backend.model.Paquete
@@ -13,6 +14,7 @@ import java.time.LocalDate
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -43,13 +45,27 @@ class AgenciaServiceTest {
     @Autowired
     lateinit var jdbcTemplate: JdbcTemplate
 
-    private val administrador = UsuarioAutenticado(id = 1L, rol = Roles.ADMINISTRADOR)
+    // El permiso de update se resuelve con el perfil persistido, así que el administrador debe existir.
+    private lateinit var administradorUsuario: Usuario
+    private lateinit var administrador: UsuarioAutenticado
 
     private var agenteUsuarioId: Long? = null
     private var agentePerfilId: Long? = null
 
+    @BeforeEach
+    fun createAdministrador() {
+        administradorUsuario = usuarioRepository.save(Usuario(
+            nombre = "Admin", apellido = "Test", correo = "agency-admin@example.com",
+            direccion = "Direccion", passwordHash = "hash", perfil = Administrador(),
+        ))
+        administrador = UsuarioAutenticado(id = administradorUsuario.id!!, rol = Roles.ADMINISTRADOR)
+    }
+
     @AfterEach
     fun cleanUp() {
+        usuarioRepository.deleteById(administradorUsuario.id!!)
+        jdbcTemplate.update("DELETE FROM administrador WHERE id = ?", administradorUsuario.perfil.id)
+        jdbcTemplate.update("DELETE FROM perfil WHERE id = ?", administradorUsuario.perfil.id)
         agenteUsuarioId?.let { usuarioRepository.deleteById(it) }
         // Usuario solo propaga PERSIST al perfil y no hay repositorio de perfiles: se borra el Agente a mano.
         agentePerfilId?.let {

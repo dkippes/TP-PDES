@@ -1,14 +1,19 @@
 package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.JwtService
+import com.aterrizAR.backend.auth.UsuarioRepository
+import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Agencia
-import com.aterrizAR.backend.security.authenticatedAs
+import com.aterrizAR.backend.model.Usuario
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
@@ -33,13 +38,34 @@ class AgenciaControllerTest {
     @Autowired
     lateinit var jwtService: JwtService
 
+    @Autowired
+    lateinit var usuarioRepository: UsuarioRepository
+
+    @Autowired
+    lateinit var jdbcTemplate: JdbcTemplate
+
+    // El permiso de update se resuelve con el perfil persistido, así que el administrador debe existir.
+    private lateinit var administrador: Usuario
+
+    @BeforeEach
+    fun createAdministrador() {
+        administrador = usuarioRepository.save(Usuario(
+            nombre = "Admin", apellido = "Test", correo = "agency-controller-admin@example.com",
+            direccion = "Direccion", passwordHash = "unused", perfil = Administrador(),
+        ))
+    }
+
     @AfterEach
     fun cleanUp() {
         agenciaRepository.deleteAll()
+        usuarioRepository.deleteById(administrador.id!!)
+        jdbcTemplate.update("DELETE FROM administrador WHERE id = ?", administrador.perfil.id)
+        jdbcTemplate.update("DELETE FROM perfil WHERE id = ?", administrador.perfil.id)
     }
 
-    private fun perform(request: MockHttpServletRequestBuilder) =
-        mockMvc.perform(request.authenticatedAs(jwtService))
+    private fun perform(request: MockHttpServletRequestBuilder) = mockMvc.perform(
+        request.header(HttpHeaders.AUTHORIZATION, "Bearer ${jwtService.createToken(administrador)}"),
+    )
 
     private fun agenciaJson(nombre: String = "Viajes Sur") = """
         {"nombre":"$nombre","email":"ventas@viajessur.com"}
