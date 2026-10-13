@@ -24,6 +24,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: dev
     container_name: aterrizar-backend
     restart: unless-stopped
     environment:
@@ -71,6 +72,7 @@ services:
     build:
       context: ./flying.service
       dockerfile: Dockerfile
+      target: dev
     container_name: aterrizar-flying
     restart: unless-stopped
     environment:
@@ -108,6 +110,7 @@ services:
     build:
       context: ./front
       dockerfile: Dockerfile
+      target: dev
     container_name: aterrizar-frontend
     restart: unless-stopped
     environment:
