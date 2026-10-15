@@ -14,9 +14,9 @@ class Agencia(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @Column(nullable = false)
-    val nombre: String,
+    var nombre: String,
     @Column(nullable = false, unique = true)
-    val email: String,
+    var email: String,
     // @JsonIgnore: son colecciones de solo-JPA (cascade), exponerlas serializa Paquete/Compra
     // que a su vez referencian de vuelta a esta agencia y produce una recursión infinita.
     @JsonIgnore

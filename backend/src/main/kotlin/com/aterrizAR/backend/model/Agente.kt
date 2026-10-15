@@ -12,4 +12,6 @@ class Agente(
 ) : Perfil() {
     override val roleName: String
         get() = Roles.AGENTE
+
+    override fun gestionaAgencia(agenciaId: Long) = agencia.id == agenciaId
 }
