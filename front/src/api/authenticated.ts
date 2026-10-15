@@ -1,5 +1,5 @@
 import type { SesionAutenticada } from './auth'
-import { ApiError, readJson, sendJson, type HttpMethod } from './http'
+import { ApiError, readJson, sendJson, type HttpMethod, type JsonRequest } from './http'
 import { restoreSession } from '../auth/session'
 
 export type SessionEvents = {
@@ -7,9 +7,7 @@ export type SessionEvents = {
   onSessionExpired: () => void
 }
 
-export type AuthenticatedRequest = <T>(method: HttpMethod, path: string, body?: object) => Promise<T>
-
-export function createAuthenticatedRequest(accessToken: string, events: SessionEvents): AuthenticatedRequest {
+export function createAuthenticatedRequest(accessToken: string, events: SessionEvents): JsonRequest {
   return async function request<T>(method: HttpMethod, path: string, body?: object): Promise<T> {
     let response = await sendJson(method, path, body, accessToken)
     if (response.status === 401) {

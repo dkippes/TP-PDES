@@ -1,4 +1,4 @@
-import type { AuthenticatedRequest } from './authenticated'
+import type { JsonRequest } from './http'
 import type {
   AgenciaRequestDTO, AgenciaResponseDTO, UsuarioCreateRequestDTO, UsuarioResponseDTO, UsuarioUpdateRequestDTO,
 } from '../types/admin'
@@ -20,7 +20,7 @@ export interface AgenciasApi {
 export type AdminApi = { usuarios: UsuariosApi; agencias: AgenciasApi }
 
 // Resource operations depend on an authenticated request, not on fetch or React state.
-export function createAdminApi(request: AuthenticatedRequest): AdminApi {
+export function createAdminApi(request: JsonRequest): AdminApi {
   return {
     usuarios: {
       listar: () => request('GET', 'usuarios'),

@@ -1,18 +1,20 @@
 # React + TypeScript + Vite
 
-## Home administrativa
+## Inicio y administración
 
-Al autenticarse con ADMINISTRADOR, la Home muestra el ABM de usuarios y agencias. Las peticiones usan el JWT en memoria; ante un 401 comparten la renovación de sesión y reintentan una vez. El resto de los roles ve la Home de viajes.
+Inicio muestra el catálogo completo de paquetes para visitantes y usuarios autenticados: destino, descripción breve e imagen placeholder local. Consume `GET /api/paquetes` sin JWT. Contempla carga, lista vacía y errores con reintento.
+
+ADMINISTRADOR accede al ABM de usuarios y agencias mediante Administración en la navegación. Inicio vuelve al catálogo. Las peticiones administrativas usan el JWT en memoria; ante un 401 comparten la renovación de sesión y reintentan una vez.
 
 El transporte JSON y los errores se comparten en `src/api/http.ts`; la renovación está en `src/api/authenticated.ts`. Las operaciones de usuarios/agencias dependen de ese transporte mediante contratos separados en `src/api/admin.ts`. Los DTOs de alta y edición son distintos en `src/types/admin.ts`: crear requiere contraseña y editar permite omitirla. Los paneles coordinan estado y acciones; formularios, tabla y detalle de usuario tienen componentes propios.
 
 Usuarios incluye búsqueda, filtro por rol, detalle, alta, edición y baja confirmada. AGENTE requiere agencia; una contraseña vacía durante la edición conserva la actual. Agencias incluye búsqueda, alta, edición y baja confirmada. Los rechazos del backend se muestran en el formulario o confirmación correspondiente.
 
-Con Compose y perfil `dev`, ingresá con `admin@gmail.com` / `12345678`. El backend carga automáticamente las agencias y cuentas demo; ver [README principal](../README.md#administración-y-datos-demo).
+Con Compose y perfil `dev`, ingresá con `admin@gmail.com` / `12345678`. El backend carga automáticamente las agencias, cuentas y paquetes demo; ver [README principal](../README.md#administración-y-datos-demo).
 
 ## Gherkin de registro, login y administración
 
-Desde esta carpeta, ejecutá `npm run test:bdd` para probar los formularios y el ABM administrativo con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
+Desde esta carpeta, ejecutá `npm run test:bdd` para probar el catálogo público, la navegación, los formularios y el ABM administrativo con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
 
 Para ver las acciones en Chrome y avanzar paso a paso con el inspector:
 

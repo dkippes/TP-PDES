@@ -20,6 +20,7 @@ class DevDataSeeder(
     private val usuarioRepository: UsuarioRepository,
     private val passwordEncoder: PasswordEncoder,
     private val agenciaRepository: AgenciaRepository,
+    private val paquetesSeeder: DevPaquetesSeeder,
 ) : CommandLineRunner {
     @Transactional
     override fun run(vararg args: String) {
@@ -30,6 +31,7 @@ class DevDataSeeder(
         createIfMissing("usuario@gmail.com", "Usuario", Comprador())
         createIfMissing("agente@gmail.com", "Agente Sur", Agente(sur))
         createIfMissing("agente.andino@gmail.com", "Agente Andino", Agente(andina))
+        paquetesSeeder.seed(sur, andina)
     }
 
     private fun agenciaIfMissing(nombre: String, email: String): Agencia =

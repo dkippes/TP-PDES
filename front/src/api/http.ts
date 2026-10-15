@@ -1,6 +1,10 @@
 export const apiUrl = (import.meta.env?.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+export type JsonRequest = <T>(method: HttpMethod, path: string, body?: object) => Promise<T>
+
+export const requestJson: JsonRequest = async <T>(method: HttpMethod, path: string, body?: object): Promise<T> =>
+  readJson<T>(await sendJson(method, path, body))
 
 export class ApiError extends Error {
   readonly status: number

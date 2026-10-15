@@ -19,7 +19,6 @@ class CatalogEndpointRules {
     @Bean fun hotelUpdateRule() = EndpointRoleRule(HttpMethod.PUT, "/api/hoteles/{id}", setOf(Roles.ADMINISTRADOR))
     @Bean fun hotelDeleteRule() = EndpointRoleRule(HttpMethod.DELETE, "/api/hoteles/{id}", setOf(Roles.ADMINISTRADOR))
 
-    @Bean fun paqueteListRule() = EndpointRoleRule(HttpMethod.GET, "/api/paquetes", Roles.supported)
     @Bean fun paqueteDetailRule() = EndpointRoleRule(HttpMethod.GET, "/api/paquetes/{id}", Roles.supported)
     @Bean fun paqueteCreateRule() = EndpointRoleRule(HttpMethod.POST, "/api/paquetes", setOf(Roles.ADMINISTRADOR, Roles.AGENTE))
     @Bean fun paqueteUpdateRule() = EndpointRoleRule(HttpMethod.PUT, "/api/paquetes/{id}", setOf(Roles.ADMINISTRADOR, Roles.AGENTE))

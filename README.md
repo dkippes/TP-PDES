@@ -99,11 +99,13 @@ Al iniciar con el perfil `dev` (predeterminado de Compose), se cargan automátic
 
 También se carga Horizonte Turismo, inicialmente sin agentes. La carga conserva los registros existentes por correo y no duplica datos al reiniciar; si se elimina un registro demo, se vuelve a crear al arrancar. Está deshabilitada fuera de `dev`.
 
-Al ingresar como administrador, la Home muestra las secciones Usuarios y Agencias con búsqueda, alta, edición y confirmación de baja. Usuarios incluye filtro por rol, detalle y selección de agencia para agentes. La contraseña de edición es opcional. El backend rechaza la baja de registros con referencias y las operaciones sobre el propio administrador que lo dejarían sin acceso. Una agencia eliminada también elimina sus paquetes si ninguna referencia impide la operación.
+Inicio muestra todos los paquetes con destino, descripción breve e imagen placeholder local, también sin iniciar sesión. `GET /api/paquetes` es público; el detalle y las escrituras conservan sus permisos. El administrador accede a Usuarios y Agencias mediante Administración en la navegación, e Inicio vuelve al catálogo. El ABM incluye búsqueda, alta, edición y confirmación de baja. Usuarios incluye filtro por rol, detalle y selección de agencia para agentes. La contraseña de edición es opcional. El backend rechaza la baja de registros con referencias y las operaciones sobre el propio administrador que lo dejarían sin acceso. Una agencia eliminada también elimina sus paquetes si ninguna referencia impide la operación.
+
+En `dev` también se crean hoteles y tres paquetes demo: Bariloche y Córdoba (Viajes del Sur), y Madrid (Rumbo Andino), con origen Buenos Aires. Se seleccionan vuelos futuros de ida/vuelta disponibles consultando flying-service y se crean mediante las validaciones de paquetes. Los reinicios conservan los paquetes existentes sin duplicarlos. Si flying-service no está disponible o faltan vuelos para una ruta, se omite esa carga y se reintenta al próximo arranque. Los datos de vuelos existentes deben incluir fechas futuras.
 
 ## Tests Gherkin del frontend
 
-Requiere Node y Chrome instalado. Los tests de registro, login y ABM administrativo levantan Vite automáticamente y simulan las respuestas de la API; no requieren backend ni Docker.
+Requiere Node y Chrome instalado. Los tests del catálogo público, registro, login y ABM administrativo levantan Vite automáticamente y simulan las respuestas de la API; no requieren backend ni Docker.
 
 Desde la raíz del proyecto:
 

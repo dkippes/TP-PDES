@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AuthError, cerrarSesion, type SesionAutenticada } from './api/auth'
+import { requestJson } from './api/http'
+import { createPaquetesApi } from './api/paquetes'
 import { restorePendingRefresh, restoreSession } from './auth/session'
 import { Navbar } from './components/Navbar'
 import { HomePage } from './pages/HomePage'
@@ -8,6 +10,8 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import type { View } from './types'
 import type { UsuarioResponseDTO } from './types/admin'
+
+const paquetesApi = createPaquetesApi(requestJson)
 
 function App() {
   const [view, setView] = useState<View>('home')
@@ -104,17 +108,18 @@ function App() {
     }
   }
 
+  const currentView = view === 'admin' && session?.user.role !== 'ADMINISTRADOR' ? 'home' : view
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      <Navbar onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
+      <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
       <main className="mx-auto max-w-6xl px-5 py-10 sm:py-14">
         {message && <p className="mb-4 text-sm text-slate-700" role="status">{message}</p>}
         {restoring ? <p role="status">Recuperando sesión...</p> : <>
-          {view === 'home' && (session?.user.role === 'ADMINISTRADOR'
-            ? <AdminHomePage session={session} onSessionRenewed={handleSessionRenewed} onSessionExpired={handleSessionExpired} onCurrentUserUpdated={handleCurrentUserUpdated} />
-            : <HomePage authenticated={session !== null} onRegister={() => setView('register')} />)}
-          {view === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
-          {view === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
+          {currentView === 'home' && <HomePage api={paquetesApi} />}
+          {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={handleSessionRenewed} onSessionExpired={handleSessionExpired} onCurrentUserUpdated={handleCurrentUserUpdated} />}
+          {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
+          {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
         </>}
       </main>
     </div>

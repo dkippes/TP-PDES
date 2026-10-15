@@ -6,7 +6,7 @@ import { UsuarioForm } from './UsuarioForm'
 import { UsuarioDetail } from './UsuarioDetail'
 import { UsuariosTable } from './UsuariosTable'
 import { inputClass, primaryClass, roleLabels, secondaryClass } from './controls'
-import { useAdminData } from './useAdminData'
+import { useRemoteData } from '../../hooks/useRemoteData'
 
 type Props = {
   api: UsuariosApi
@@ -21,7 +21,7 @@ export function UsuariosPanel({ api, agenciasApi, currentUserId, onCurrentUserUp
     const [usuarios, agencias] = await Promise.all([api.listar(), agenciasApi.listar()])
     return { usuarios, agencias }
   }, [api, agenciasApi])
-  const { data, loading, error, reload } = useAdminData(load, initial)
+  const { data, loading, error, reload } = useRemoteData(load, initial)
   const [search, setSearch] = useState('')
   const [rol, setRol] = useState('')
   const [editor, setEditor] = useState<{ usuario: UsuarioResponseDTO | null } | null>(null)

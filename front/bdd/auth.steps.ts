@@ -19,6 +19,7 @@ const heading = (form: string) => form === 'registro' ? 'Crear cuenta' : 'Inicia
 
 Given('que estoy en el formulario de {string}', async ({ page, authRequests }, form: string) => {
   expect(authRequests).toEqual([])
+  await page.route('**/api/paquetes', (route) => route.fulfill({ json: [] }))
   // Every API request is intercepted; no request reaches a backend.
   await page.route(/\/api\/auth\/[^/]+$/, async (route) => {
     if (new URL(route.request().url()).pathname === '/api/auth/refresh') {
@@ -95,7 +96,7 @@ Then('veo el error {string}', async ({ page }, message: string) => {
 
 Then('veo la Home autenticada con el saludo {string}', async ({ page }, greeting: string) => {
   await expect(page.getByText(greeting, { exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Encontrá tu próximo viaje.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Todos los paquetes' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Cerrar sesión', exact: true })).toBeVisible()
 })
 

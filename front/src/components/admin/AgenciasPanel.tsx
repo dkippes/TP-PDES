@@ -4,11 +4,11 @@ import type { AgenciaResponseDTO } from '../../types/admin'
 import { AgenciaForm } from './AgenciaForm'
 import { DeleteConfirmation } from './DeleteConfirmation'
 import { inputClass, primaryClass, secondaryClass } from './controls'
-import { useAdminData } from './useAdminData'
+import { useRemoteData } from '../../hooks/useRemoteData'
 
 export function AgenciasPanel({ api }: { api: AgenciasApi }) {
   const load = useCallback(() => api.listar(), [api])
-  const { data, loading, error, reload } = useAdminData<AgenciaResponseDTO[]>(load, [])
+  const { data, loading, error, reload } = useRemoteData<AgenciaResponseDTO[]>(load, [])
   const [search, setSearch] = useState('')
   const [editor, setEditor] = useState<{ agencia: AgenciaResponseDTO | null } | null>(null)
   const [deleting, setDeleting] = useState<AgenciaResponseDTO | null>(null)

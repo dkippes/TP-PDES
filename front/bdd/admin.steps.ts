@@ -6,6 +6,7 @@ const { Given, When, Then } = createBdd(test)
 const dialog = (page: import('@playwright/test').Page) => page.getByRole('dialog')
 
 Given('que ingreso a la Home con rol {string}', async ({ page }, rol: string) => {
+  await page.route('**/api/paquetes', (route) => route.fulfill({ json: [] }))
   let usuarios = [
     { id: 1, nombre: 'Admin', apellido: 'Demo', correo: 'admin@example.com', direccion: 'Quilmes', rol: 'ADMINISTRADOR', agenciaId: null as number | null },
     { id: 2, nombre: 'Ana', apellido: 'Demo', correo: 'ana@example.com', direccion: 'Quilmes', rol: 'COMPRADOR', agenciaId: null as number | null },
@@ -54,10 +55,12 @@ Given('que ingreso a la Home con rol {string}', async ({ page }, rol: string) =>
     return route.fulfill({ status: method === 'POST' ? 201 : 200, json: saved })
   })
   await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Todos los paquetes' })).toBeVisible()
   if (rol === 'ADMINISTRADOR') {
+    await page.getByRole('button', { name: 'Administración', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Administración', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Nuevo usuario', exact: true })).toBeEnabled()
-  } else await expect(page.getByRole('heading', { name: 'Encontrá tu próximo viaje.' })).toBeVisible()
+  }
 })
 
 When('creo un usuario agente con una agencia', async ({ page }) => {
@@ -162,6 +165,7 @@ Then('no puedo eliminar mi cuenta ni cambiar mi propio rol', async ({ page }) =>
   await expect(page.getByLabel('Rol', { exact: true })).toBeDisabled()
 })
 Then('veo la Home de viajes sin controles administrativos', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Administración', exact: true })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Secciones de administración' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Nuevo usuario', exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Nueva agencia', exact: true })).toHaveCount(0)

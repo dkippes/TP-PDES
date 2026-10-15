@@ -1,15 +1,15 @@
-type HomePageProps = {
-  onRegister: () => void
-  authenticated?: boolean
-}
+import type { PaquetesApi } from '../api/paquetes'
+import { PaquetesList } from '../components/paquetes/PaquetesList'
 
-export function HomePage({ onRegister, authenticated = false }: HomePageProps) {
+export function HomePage({ api }: { api: PaquetesApi }) {
   return (
-    <section className="py-16 text-center">
-      <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-sky-700">AterrizAR</p>
-      <h1 className="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Encontrá tu próximo viaje.</h1>
-      <p className="mx-auto mt-5 max-w-xl text-lg text-slate-600">Una forma simple de buscar y organizar paquetes turísticos.</p>
-      {!authenticated && <button className="mt-8 rounded-md bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800" type="button" onClick={onRegister}>Crear una cuenta</button>}
+    <section className="space-y-8">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">AterrizAR</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Todos los paquetes</h1>
+        <p className="mt-3 text-slate-600">Conocé los destinos y elegí tu próximo viaje.</p>
+      </div>
+      <PaquetesList api={api} />
     </section>
   )
 }

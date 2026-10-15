@@ -1,6 +1,6 @@
 # Gherkin para el frontend
 
-Esta suite usa playwright-bdd para ejecutar escenarios Gherkin en español sobre los formularios React de autenticación y administración, con Chrome ya instalado. Inicia únicamente Vite: no necesita Java, Docker, base de datos ni backend.
+Esta suite usa playwright-bdd para ejecutar escenarios Gherkin en español sobre el catálogo de paquetes y los formularios React de autenticación y administración, con Chrome ya instalado. Inicia únicamente Vite: no necesita Java, Docker, base de datos ni backend.
 
 Las respuestas de la API se simulan con page.route. Se comprueba qué datos envía el frontend y cómo muestra respuestas exitosas o errores. No se prueba que el backend cree usuarios, valide contraseñas o emita tokens reales.
 
@@ -30,6 +30,7 @@ npx playwright show-report playwright-bdd-report
 - front/bdd/login.feature: éxito, credenciales rechazadas y correo inválido.
 - front/bdd/auth.steps.ts: pasos y respuestas de API simuladas. Cada escenario tiene un contexto de navegador independiente.
 - front/bdd/admin.feature y admin.steps.ts: ABM de usuarios/agencias, asociación de agentes, edición sin resetear contraseña, búsquedas, detalle, cancelación de baja, conflictos, restricciones de rol/cuenta propia, sesión vencida y reintento de carga.
+- front/bdd/home.feature y home.steps.ts: catálogo público completo, imágenes cargadas, regreso con Inicio desde login/Administración, lista vacía y reintento ante errores.
 - front/playwright.bdd.config.ts: configuración que levanta solo Vite.
 
 Para agregar casos, editar los .feature y reutilizar pasos; si hacen falta pasos nuevos, implementarlos en el archivo de pasos correspondiente. Los pasos administrativos reutilizan la misma fixture que autenticación.

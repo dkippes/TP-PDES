@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export function useAdminData<T>(load: () => Promise<T>, initial: T) {
+export function useRemoteData<T>(load: () => Promise<T>, initial: T) {
   const [state, setState] = useState({ data: initial, loading: true, error: '' })
   const [revision, setRevision] = useState(0)
   useEffect(() => {

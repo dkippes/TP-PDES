@@ -86,7 +86,7 @@ These rules apply to both Kotlin services unless a local package already establi
 - Database connection settings use Spring's `SPRING_DATASOURCE_*` variables.
 - CORS is configured through `CORS_ALLOWED_ORIGIN`.
 - Normal application properties default Hibernate schema handling to `validate`; local Compose currently overrides the application backend to `update`. Do not assume development behavior is suitable for production.
-- Catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/packages, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
+- `GET /api/paquetes` is explicitly public in `SecurityConfig`. Other catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/package details, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
 
 ## Frontend conventions
 
@@ -101,7 +101,7 @@ These rules apply to both Kotlin services unless a local package already establi
 - Authentication integration tests use Node's built-in test runner through `npm test`; CI runs them alongside lint/build.
 - The frontend uses the existing `/api/auth/register`, `login`, `refresh`, and `logout` endpoints. Registration creates an account and redirects to login.
 - Keep access tokens in memory. Restore and renew sessions through the HttpOnly refresh cookie with `credentials: 'include'`; do not trust a user object in localStorage as authentication.
-- ADMINISTRADOR sees `AdminHomePage` with user/agency CRUD; other roles keep the travel Home. `api/http.ts` centralizes JSON transport and errors; `api/authenticated.ts` sends the in-memory Bearer token, shares the rotating refresh on HTTP 401 and retries once. `api/admin.ts` maps resource operations through an injected request and exposes separate `UsuariosApi` / `AgenciasApi` contracts. Transport DTOs live in `types/admin.ts`; user creation requires a password and updates may omit it. User administration returns `rol`, whereas authentication returns `user.role`.
+- Inicio renders `HomePage` with all packages for visitors and authenticated users through the public `api/paquetes.ts` contract. Cards show destination, a description derived from origin/destination/hotel, and a local placeholder image. ADMINISTRADOR opens `AdminHomePage` with user/agency CRUD through Administración in the navbar; Inicio returns to the catalog. `hooks/useRemoteData.ts` shares loading/error/retry state. `api/http.ts` centralizes JSON transport and errors; `api/authenticated.ts` sends the in-memory Bearer token, shares the rotating refresh on HTTP 401 and retries once. `api/admin.ts` maps resource operations through an injected request and exposes separate `UsuariosApi` / `AgenciasApi` contracts. Transport DTOs live in `types/admin.ts`; user creation requires a password and updates may omit it. User administration returns `rol`, whereas authentication returns `user.role`.
 - Admin forms leave an unchanged password out of PUT requests, require an agency for AGENTE, and display backend validation/conflict errors. Editing the current account updates the navbar; resetting its password returns to login.
 
 ## Local development
@@ -126,6 +126,8 @@ Expected local services:
 Compose maintains separate PostgreSQL databases and volumes for the application backend and the flying service. Do not couple their schemas or access one service's database directly from the other service.
 
 With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR), `usuario@gmail.com` (COMPRADOR), `agente@gmail.com` and `agente.andino@gmail.com` (AGENTE), all with password `12345678`. It also creates Viajes del Sur, Rumbo Andino and Horizonte Turismo; the agents belong to the first two agencies. Horizonte starts without agents so its deletion can be exercised. Existing records are preserved by email; missing demo records are recreated on startup. Data is persisted in PostgreSQL through repositories after Flyway; the seeder is disabled outside `dev`.
+
+`bootstrap/DevPaquetesSeeder` creates hotels and packages for Bariloche, Córdoba and Madrid, using available future round-trip flights from flying-service through `VueloClient` and the existing `PaqueteService` validations. It preserves existing packages by agency/hotel/route across restarts. An unavailable flight service or a missing route skips package fixtures until a later startup; it does not prevent creating demo users/agencies. Existing flight fixtures must still include future flights. No cross-service database access is used.
 
 ## Build and verification commands
 
