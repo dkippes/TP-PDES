@@ -65,3 +65,42 @@ jobs:
           tags: aterrizar-front:ci
           cache-from: type=gha,scope=front
           cache-to: type=gha,mode=max,scope=front
+
+  bdd:
+    name: Gherkin registration & login
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Verify preinstalled Chrome
+        run: google-chrome --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test frontend registration and login with Gherkin
+        run: npm run test:bdd
+
+      - name: Upload Gherkin results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-bdd-results
+          path: |
+            front/playwright-bdd-report/
+            front/test-results-bdd/
+          retention-days: 7
