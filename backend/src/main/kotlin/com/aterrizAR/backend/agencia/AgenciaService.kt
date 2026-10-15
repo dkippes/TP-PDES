@@ -1,8 +1,6 @@
 package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.model.Agencia
-import com.aterrizAR.backend.model.Agente
-import com.aterrizAR.backend.model.Roles
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -24,7 +22,7 @@ class AgenciaService(
 
     fun create(request: AgenciaRequestDTO): Agencia {
         val agencia = request.toModel()
-        validateEmailUnico(agencia.email, excludeId = null)
+        validateEmailUnico(agencia.email)
         return save(agencia)
     }
 
@@ -35,7 +33,7 @@ class AgenciaService(
         val agencia = findById(id)
         val datos = request.toModel()
         // Antes de modificar la entidad: la consulta dispararía un flush de los cambios pendientes.
-        validateEmailUnico(datos.email, excludeId = id)
+        validateEmailUnicoExcepto(datos.email, id)
         agencia.nombre = datos.nombre
         agencia.email = datos.email
         return save(agencia)
@@ -55,15 +53,20 @@ class AgenciaService(
     }
 
     private fun validateUpdatePermission(id: Long, usuario: UsuarioAutenticado) {
-        if (usuario.rol == Roles.ADMINISTRADOR) return
-        val agente = usuarioRepository.findByIdOrNull(usuario.id)?.perfil as? Agente
-        if (agente?.agencia?.id != id) {
+        val perfil = usuarioRepository.findByIdOrNull(usuario.id)?.perfil
+        if (perfil?.gestionaAgencia(id) != true) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Solo puede modificar su propia agencia")
         }
     }
 
-    private fun validateEmailUnico(email: String, excludeId: Long?) {
-        if (agenciaRepository.existsByEmailAndIdNot(email, excludeId ?: -1L)) {
+    private fun validateEmailUnico(email: String) {
+        if (agenciaRepository.existsByEmail(email)) {
+            throw emailDuplicado()
+        }
+    }
+
+    private fun validateEmailUnicoExcepto(email: String, id: Long) {
+        if (agenciaRepository.existsByEmailAndIdNot(email, id)) {
             throw emailDuplicado()
         }
     }
