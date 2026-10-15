@@ -1,10 +1,10 @@
 package com.aterrizAR.backend.agencia
 
 import com.aterrizAR.backend.auth.JwtService
-import com.aterrizAR.backend.auth.UsuarioRepository
 import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Usuario
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
@@ -41,10 +40,7 @@ class AgenciaControllerTest {
     @Autowired
     lateinit var usuarioRepository: UsuarioRepository
 
-    @Autowired
-    lateinit var jdbcTemplate: JdbcTemplate
-
-    // El permiso de update se resuelve con el perfil persistido, así que el administrador debe existir.
+    // El permiso de update se resuelve con el perfil persistido, asÃ­ que el administrador debe existir.
     private lateinit var administrador: Usuario
 
     @BeforeEach
@@ -59,8 +55,6 @@ class AgenciaControllerTest {
     fun cleanUp() {
         agenciaRepository.deleteAll()
         usuarioRepository.deleteById(administrador.id!!)
-        jdbcTemplate.update("DELETE FROM administrador WHERE id = ?", administrador.perfil.id)
-        jdbcTemplate.update("DELETE FROM perfil WHERE id = ?", administrador.perfil.id)
     }
 
     private fun perform(request: MockHttpServletRequestBuilder) = mockMvc.perform(

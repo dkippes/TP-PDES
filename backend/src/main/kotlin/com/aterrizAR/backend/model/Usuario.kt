@@ -16,16 +16,17 @@ class Usuario(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     @Column(nullable = false)
-    val nombre: String,
+    var nombre: String,
     @Column(nullable = false)
-    val apellido: String,
+    var apellido: String,
     @Column(nullable = false, unique = true)
-    val correo: String,
+    var correo: String,
     @Column(nullable = false)
-    val direccion: String,
+    var direccion: String,
     @Column(nullable = false, name = "password_hash")
-    val passwordHash: String,
-    @OneToOne(cascade = [CascadeType.PERSIST], optional = false)
+    var passwordHash: String,
+    // El perfil pertenece al usuario: cambiar de rol reemplaza el perfil y el anterior se elimina.
+    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true, optional = false)
     @JoinColumn(name = "perfil_id", nullable = false, unique = true)
-    val perfil: Perfil,
+    var perfil: Perfil,
 )
