@@ -11,9 +11,9 @@ type NavbarProps = {
 export function Navbar({ onNavigate, user, onLogout, busy }: NavbarProps) {
   return (
     <header className="border-b border-slate-200 bg-white">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4" aria-label="Navegación principal">
+      <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4" aria-label="Navegación principal">
         <button className="text-xl font-bold text-sky-700" type="button" onClick={() => onNavigate('home')}>AterrizAR</button>
-        <div className="flex items-center gap-4 text-sm font-medium">
+        <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
           <button className="text-slate-600 hover:text-sky-700" type="button" onClick={() => onNavigate('home')}>Inicio</button>
           {user ? (
             <>

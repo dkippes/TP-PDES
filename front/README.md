@@ -1,8 +1,18 @@
 # React + TypeScript + Vite
 
-## Gherkin de registro y login
+## Home administrativa
 
-Desde esta carpeta, ejecutá `npm run test:bdd` para probar los formularios con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
+Al autenticarse con ADMINISTRADOR, la Home muestra el ABM de usuarios y agencias. Las peticiones usan el JWT en memoria; ante un 401 comparten la renovación de sesión y reintentan una vez. El resto de los roles ve la Home de viajes.
+
+El transporte JSON y los errores se comparten en `src/api/http.ts`; la renovación está en `src/api/authenticated.ts`. Las operaciones de usuarios/agencias dependen de ese transporte mediante contratos separados en `src/api/admin.ts`. Los DTOs de alta y edición son distintos en `src/types/admin.ts`: crear requiere contraseña y editar permite omitirla. Los paneles coordinan estado y acciones; formularios, tabla y detalle de usuario tienen componentes propios.
+
+Usuarios incluye búsqueda, filtro por rol, detalle, alta, edición y baja confirmada. AGENTE requiere agencia; una contraseña vacía durante la edición conserva la actual. Agencias incluye búsqueda, alta, edición y baja confirmada. Los rechazos del backend se muestran en el formulario o confirmación correspondiente.
+
+Con Compose y perfil `dev`, ingresá con `admin@gmail.com` / `12345678`. El backend carga automáticamente las agencias y cuentas demo; ver [README principal](../README.md#administración-y-datos-demo).
+
+## Gherkin de registro, login y administración
+
+Desde esta carpeta, ejecutá `npm run test:bdd` para probar los formularios y el ABM administrativo con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
 
 Para ver las acciones en Chrome y avanzar paso a paso con el inspector:
 
@@ -16,7 +26,7 @@ Usá **Step over** para avanzar o **Resume** para continuar. Más detalles en [l
 
 Set `VITE_API_URL` to the application backend (default: `http://localhost:8080`). Registration calls `/api/auth/register` and redirects to login. Login receives a JWT and an HttpOnly refresh cookie; access tokens stay in memory. Reloading restores the session through `/api/auth/refresh`, and logout revokes the backend session.
 
-`npm test` runs authentication contract and refresh concurrency tests using Node's built-in test runner and the existing TypeScript compiler. CI runs these tests along with `npm run lint` and `npm run build`. Tests mock HTTP responses; manually verify cookie persistence with the frontend and backend running on the same hostname (for example, both on `localhost`).
+`npm test` runs authentication/admin contract and refresh concurrency tests using Node's built-in test runner and the existing TypeScript compiler. CI runs these tests along with `npm run lint` and `npm run build`. Tests mock HTTP responses; manually verify cookie persistence with the frontend and backend running on the same hostname (for example, both on `localhost`).
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

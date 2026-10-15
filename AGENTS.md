@@ -15,6 +15,17 @@ Use this file as the starting point for repository work. Confirm behavior in sou
 
 Both Kotlin services currently declare Kotlin 2.3.21 and Spring Boot 4.1.0 in their Gradle builds.
 
+## Design and scope
+
+Apply the [design and quality guidelines](Docs/design-guidelines.md) when implementing or reviewing code.
+
+- Implement the agreed ticket scope. The roadmap and enunciado do not authorize adding adjacent features; clarify dependencies before expanding scope.
+- Apply SOLID with cohesive responsibilities, composition and constructor injection. Introduce interfaces and patterns for real boundaries or variations, not speculative extension points.
+- Keep Kotlin domain invariants in services and preserve `Controller -> Service -> Repository`. Keep transport DTOs separate from JPA entities, with explicit create/update contracts when their requirements differ.
+- In React, compose function components and hooks. Keep HTTP/session mechanics separate from user/agency operations; give components only the API capabilities they consume.
+- Extract reusable presentation components when they reduce responsibilities in a panel. Avoid a generic CRUD framework for two resources with distinct rules.
+- Verify observable behavior, permissions, failure handling and idempotent fixture loading. Keep test setup isolated and share existing test utilities rather than adding another framework.
+
 ## Runtime architecture
 
 ```text
@@ -90,6 +101,8 @@ These rules apply to both Kotlin services unless a local package already establi
 - Authentication integration tests use Node's built-in test runner through `npm test`; CI runs them alongside lint/build.
 - The frontend uses the existing `/api/auth/register`, `login`, `refresh`, and `logout` endpoints. Registration creates an account and redirects to login.
 - Keep access tokens in memory. Restore and renew sessions through the HttpOnly refresh cookie with `credentials: 'include'`; do not trust a user object in localStorage as authentication.
+- ADMINISTRADOR sees `AdminHomePage` with user/agency CRUD; other roles keep the travel Home. `api/http.ts` centralizes JSON transport and errors; `api/authenticated.ts` sends the in-memory Bearer token, shares the rotating refresh on HTTP 401 and retries once. `api/admin.ts` maps resource operations through an injected request and exposes separate `UsuariosApi` / `AgenciasApi` contracts. Transport DTOs live in `types/admin.ts`; user creation requires a password and updates may omit it. User administration returns `rol`, whereas authentication returns `user.role`.
+- Admin forms leave an unchanged password out of PUT requests, require an agency for AGENTE, and display backend validation/conflict errors. Editing the current account updates the navbar; resetting its password returns to login.
 
 ## Local development
 
@@ -112,7 +125,7 @@ Expected local services:
 
 Compose maintains separate PostgreSQL databases and volumes for the application backend and the flying service. Do not couple their schemas or access one service's database directly from the other service.
 
-With the `dev` Spring profile (Compose's default), `DevUsersSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR) and `usuario@gmail.com` (COMPRADOR), both with password `12345678`. Existing accounts are preserved; deleted demo accounts are recreated on the next startup. The seeder is disabled outside `dev`.
+With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR), `usuario@gmail.com` (COMPRADOR), `agente@gmail.com` and `agente.andino@gmail.com` (AGENTE), all with password `12345678`. It also creates Viajes del Sur, Rumbo Andino and Horizonte Turismo; the agents belong to the first two agencies. Horizonte starts without agents so its deletion can be exercised. Existing records are preserved by email; missing demo records are recreated on startup. Data is persisted in PostgreSQL through repositories after Flyway; the seeder is disabled outside `dev`.
 
 ## Build and verification commands
 
@@ -167,7 +180,7 @@ Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat check sonarDependencies` ge
 
 ## Frontend behavior tests (Gherkin)
 
-Registration and login have Spanish Gherkin scenarios under `front/bdd/`, executed with `playwright-bdd` and preinstalled Chrome. `front/playwright.bdd.config.ts` starts only Vite on port 15174. Step definitions intercept API requests with Playwright routes; these tests verify frontend behavior with simulated responses, not backend authentication or persistence.
+Registration, login and administrative user/agency CRUD have Spanish Gherkin scenarios under `front/bdd/`, executed with `playwright-bdd` and preinstalled Chrome. `front/playwright.bdd.config.ts` starts only Vite on port 15174. Step definitions intercept API requests with Playwright routes; these tests verify frontend behavior with simulated responses, not backend authentication or persistence.
 
 Run `npm run test:bdd` from `front/`. It typechecks steps, generates Playwright tests from features, and runs them. Generated `.features-gen/` is ignored. Reports are saved in `front/playwright-bdd-report/` and failures in `front/test-results-bdd/`. See `Docs/gherkin.md` for scope and commands. No Java, Docker or backend startup is needed.
 

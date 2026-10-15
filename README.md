@@ -37,9 +37,9 @@ Aplicación y documentación:
 - [x] Enunciado: enlace disponible al inicio del README.
 - [x] Stack tecnológico: definido y documentado.
 - [x] Front: estructura inicial, Home, registro, login y manejo de sesión.
-- [x] Back: autenticación, autorización por roles, hoteles, paquetes e integración con vuelos.
+- [x] Back: autenticación, autorización por roles, usuarios, agencias, hoteles, paquetes e integración con vuelos.
 - [x] MER / diagrama de clases: disponibles en `Docs/`.
-- [ ] App: sección Admin. Hay autorización y endpoints de catálogo; falta la interfaz de administración.
+- [ ] App: sección Admin. Home con ABM de usuarios y agencias implementada; las consultas de favoritos, compras, valoraciones y reportes corresponden a tareas pendientes.
 - [ ] App: sección Usuario común. Home y autenticación implementadas; faltan los flujos de búsqueda, favoritos, compra y reseñas.
 - [x] Documentación (README): stack, ejecución local, pruebas y calidad de código.
 - [x] Swagger: documentación OpenAPI configurada en los servicios.
@@ -86,9 +86,24 @@ Servicios:
 
 Compose Watch reinicia Backend o Flying Service cuando cambia su `src/main` o `build.gradle.kts`; Gradle recompila al arrancar el servicio. Sólo necesitás `--build` nuevamente si tocás un `Dockerfile` o `package.json`.
 
+## Administración y datos demo
+
+Al iniciar con el perfil `dev` (predeterminado de Compose), se cargan automáticamente en PostgreSQL estas cuentas, todas con contraseña `12345678`:
+
+| Cuenta | Rol | Agencia |
+| --- | --- | --- |
+| `admin@gmail.com` | ADMINISTRADOR | — |
+| `usuario@gmail.com` | COMPRADOR | — |
+| `agente@gmail.com` | AGENTE | Viajes del Sur |
+| `agente.andino@gmail.com` | AGENTE | Rumbo Andino |
+
+También se carga Horizonte Turismo, inicialmente sin agentes. La carga conserva los registros existentes por correo y no duplica datos al reiniciar; si se elimina un registro demo, se vuelve a crear al arrancar. Está deshabilitada fuera de `dev`.
+
+Al ingresar como administrador, la Home muestra las secciones Usuarios y Agencias con búsqueda, alta, edición y confirmación de baja. Usuarios incluye filtro por rol, detalle y selección de agencia para agentes. La contraseña de edición es opcional. El backend rechaza la baja de registros con referencias y las operaciones sobre el propio administrador que lo dejarían sin acceso. Una agencia eliminada también elimina sus paquetes si ninguna referencia impide la operación.
+
 ## Tests Gherkin del frontend
 
-Requiere Node y Chrome instalado. Los tests levantan Vite automáticamente y simulan las respuestas de la API; no requieren backend ni Docker.
+Requiere Node y Chrome instalado. Los tests de registro, login y ABM administrativo levantan Vite automáticamente y simulan las respuestas de la API; no requieren backend ni Docker.
 
 Desde la raíz del proyecto:
 

@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AuthError, cerrarSesion, type SesionAutenticada } from './api/auth'
 import { restorePendingRefresh, restoreSession } from './auth/session'
 import { Navbar } from './components/Navbar'
 import { HomePage } from './pages/HomePage'
+import { AdminHomePage } from './pages/AdminHomePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import type { View } from './types'
+import type { UsuarioResponseDTO } from './types/admin'
 
 function App() {
   const [view, setView] = useState<View>('home')
@@ -60,6 +62,32 @@ function App() {
     setView('login')
   }
 
+  const handleSessionExpired = useCallback(() => {
+    setSession(null)
+    setView('login')
+    setMessage('Tu sesión terminó. Iniciá sesión nuevamente.')
+  }, [])
+
+  const handleSessionRenewed = useCallback((renewed: SesionAutenticada) => {
+    setSession((current) => current ? renewed : null)
+  }, [])
+
+  const handleCurrentUserUpdated = useCallback((usuario: UsuarioResponseDTO, passwordChanged: boolean) => {
+    if (passwordChanged) {
+      setSession(null)
+      setView('login')
+      setMessage('Contraseña actualizada. Iniciá sesión nuevamente.')
+      return
+    }
+    setSession((current) => current && current.user.id === usuario.id ? {
+      ...current,
+      user: {
+        id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido,
+        correo: usuario.correo, direccion: usuario.direccion, role: usuario.rol,
+      },
+    } : current)
+  }, [])
+
   const handleLogout = async () => {
     setLoggingOut(true)
     setMessage('')
@@ -79,10 +107,12 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <Navbar onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
-      <main className="mx-auto max-w-5xl px-5 py-16">
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:py-14">
         {message && <p className="mb-4 text-sm text-slate-700" role="status">{message}</p>}
         {restoring ? <p role="status">Recuperando sesión...</p> : <>
-          {view === 'home' && <HomePage authenticated={session !== null} onRegister={() => setView('register')} />}
+          {view === 'home' && (session?.user.role === 'ADMINISTRADOR'
+            ? <AdminHomePage session={session} onSessionRenewed={handleSessionRenewed} onSessionExpired={handleSessionExpired} onCurrentUserUpdated={handleCurrentUserUpdated} />
+            : <HomePage authenticated={session !== null} onRegister={() => setView('register')} />)}
           {view === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
           {view === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
         </>}
