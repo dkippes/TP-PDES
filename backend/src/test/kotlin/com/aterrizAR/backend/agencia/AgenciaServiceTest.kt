@@ -1,6 +1,5 @@
 package com.aterrizAR.backend.agencia
 
-import com.aterrizAR.backend.auth.UsuarioRepository
 import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Administrador
 import com.aterrizAR.backend.model.Agente
@@ -10,6 +9,7 @@ import com.aterrizAR.backend.model.Roles
 import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.paquete.PaqueteRepository
 import com.aterrizAR.backend.security.UsuarioAutenticado
+import com.aterrizAR.backend.usuario.UsuarioRepository
 import java.time.LocalDate
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.web.server.ResponseStatusException
 
@@ -42,15 +41,11 @@ class AgenciaServiceTest {
     @Autowired
     lateinit var usuarioRepository: UsuarioRepository
 
-    @Autowired
-    lateinit var jdbcTemplate: JdbcTemplate
-
-    // El permiso de update se resuelve con el perfil persistido, as� que el administrador debe existir.
+    // El permiso de update se resuelve con el perfil persistido, así que el administrador debe existir.
     private lateinit var administradorUsuario: Usuario
     private lateinit var administrador: UsuarioAutenticado
 
     private var agenteUsuarioId: Long? = null
-    private var agentePerfilId: Long? = null
 
     @BeforeEach
     fun createAdministrador() {
@@ -63,17 +58,10 @@ class AgenciaServiceTest {
 
     @AfterEach
     fun cleanUp() {
+        // Usuario propaga el borrado a su perfil, así que Administrador y Agente se eliminan junto con el usuario.
         usuarioRepository.deleteById(administradorUsuario.id!!)
-        jdbcTemplate.update("DELETE FROM administrador WHERE id = ?", administradorUsuario.perfil.id)
-        jdbcTemplate.update("DELETE FROM perfil WHERE id = ?", administradorUsuario.perfil.id)
         agenteUsuarioId?.let { usuarioRepository.deleteById(it) }
-        // Usuario solo propaga PERSIST al perfil y no hay repositorio de perfiles: se borra el Agente a mano.
-        agentePerfilId?.let {
-            jdbcTemplate.update("DELETE FROM agente WHERE id = ?", it)
-            jdbcTemplate.update("DELETE FROM perfil WHERE id = ?", it)
-        }
         agenteUsuarioId = null
-        agentePerfilId = null
         paqueteRepository.deleteAll()
         agenciaRepository.deleteAll()
         hotelRepository.deleteAll()
@@ -213,7 +201,6 @@ class AgenciaServiceTest {
             direccion = "Direccion", passwordHash = "hash", perfil = Agente(paquete.agencia),
         ))
         agenteUsuarioId = usuario.id
-        agentePerfilId = usuario.perfil.id
 
         val exception = assertThrows(ResponseStatusException::class.java) {
             agenciaService.delete(paquete.agencia.id!!)

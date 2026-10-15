@@ -56,6 +56,17 @@ class RefreshTokenService(
         token.revoke(Instant.now())
     }
 
+    @Transactional
+    fun revokeAllFor(usuarioId: Long) {
+        refreshTokenRepository.revokeActiveByUsuarioId(usuarioId, Instant.now())
+    }
+
+    // La FK refresh_token.usuario_id no propaga el borrado: hay que eliminar las sesiones antes que el usuario.
+    @Transactional
+    fun deleteAllFor(usuarioId: Long) {
+        refreshTokenRepository.deleteByUsuarioId(usuarioId)
+    }
+
     private fun createSession(usuario: Usuario, familyId: UUID): String {
         val rawToken = newRawToken()
         refreshTokenRepository.save(
