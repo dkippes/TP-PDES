@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { createAdminApi } from '../api/admin'
+import { createAuthenticatedRequest } from '../api/authenticated'
 import type { SesionAutenticada } from '../api/auth'
 import { AdminHeader } from '../components/admin/AdminHeader'
 import { AdminSections, type AdminSection } from '../components/admin/AdminSections'
 import { AgenciasPanel } from '../components/admin/AgenciasPanel'
 import { UsuariosPanel } from '../components/admin/UsuariosPanel'
-import { useAdminApi } from '../hooks/admin/useAdminApi'
 import type { UsuarioResponseDTO } from '../types/admin'
 
 type Props = {
@@ -16,7 +17,8 @@ type Props = {
 
 export function AdminHomePage({ session, onSessionRenewed, onSessionExpired, onCurrentUserUpdated }: Props) {
   const [section, setSection] = useState<AdminSection>('usuarios')
-  const api = useAdminApi(session.accessToken, { onSessionRenewed, onSessionExpired })
+  const api = useMemo(() => createAdminApi(createAuthenticatedRequest(session.accessToken, { onSessionRenewed, onSessionExpired })),
+    [session.accessToken, onSessionRenewed, onSessionExpired])
 
   return <div className="space-y-6">
     <AdminHeader />
