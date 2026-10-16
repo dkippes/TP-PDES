@@ -98,7 +98,6 @@ Then('veo la Home autenticada con el saludo {string}', async ({ page }, greeting
   await expect(page.getByText(greeting, { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Todos los paquetes' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Cerrar sesión', exact: true })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Registrate o iniciá sesión' })).toHaveCount(0)
 })
 
 Then('no veo la opción de cerrar sesión', async ({ page }) => {

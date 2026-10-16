@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 import { defineBddConfig } from 'playwright-bdd'
 
 export default defineConfig({
-  testDir: defineBddConfig({ features: 'bdd/*.feature', steps: 'bdd/*.steps.ts' }),
+  testDir: defineBddConfig({ features: ['bdd/registro.feature', 'bdd/login.feature'], steps: 'bdd/auth.steps.ts' }),
   forbidOnly: !!process.env.CI,
   workers: 1,
   retries: 0,

@@ -11,7 +11,7 @@ export function createAuthenticatedRequest(accessToken: string, events: SessionE
   return async function request<T>(method: HttpMethod, path: string, body?: object): Promise<T> {
     let response = await sendJson(method, path, body, accessToken)
     if (response.status === 401) {
-      // Share the rotating refresh with App's timer and concurrent requests.
+      // Share the rotating refresh with the session timer and concurrent requests.
       let session: SesionAutenticada
       try {
         session = await restoreSession()

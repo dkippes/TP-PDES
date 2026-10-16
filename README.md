@@ -105,7 +105,7 @@ En `dev` también se crean hoteles y tres paquetes demo: Bariloche y Córdoba (V
 
 ## Tests Gherkin del frontend
 
-Requiere Node y Chrome instalado. Los tests del catálogo público, registro, login y ABM administrativo levantan Vite automáticamente y simulan las respuestas de la API; no requieren backend ni Docker.
+Requiere Node y Chrome instalado. La suite Gherkin cubre únicamente registro y login, con sus seis escenarios existentes. Levanta Vite automáticamente y simula las respuestas de la API; no requiere backend ni Docker.
 
 Desde la raíz del proyecto:
 

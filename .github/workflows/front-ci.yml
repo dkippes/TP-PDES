@@ -67,7 +67,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=front
 
   bdd:
-    name: Gherkin authentication & admin
+    name: Gherkin registration & login
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -92,7 +92,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test frontend authentication and admin CRUD with Gherkin
+      - name: Test frontend registration and login with Gherkin
         run: npm run test:bdd
 
       - name: Upload Gherkin results

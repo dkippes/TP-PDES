@@ -12,9 +12,9 @@ Usuarios incluye búsqueda, filtro por rol, detalle, alta, edición y baja confi
 
 Con Compose y perfil `dev`, ingresá con `admin@gmail.com` / `12345678`. El backend carga automáticamente las agencias, cuentas y paquetes demo; ver [README principal](../README.md#administración-y-datos-demo).
 
-## Gherkin de registro, login y administración
+## Gherkin de registro y login
 
-Desde esta carpeta, ejecutá `npm run test:bdd` para probar el catálogo público, la navegación, los formularios y el ABM administrativo con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
+Desde esta carpeta, ejecutá `npm run test:bdd` para probar únicamente los seis escenarios existentes de registro y login con respuestas de API simuladas. Requiere Node, las dependencias instaladas y Chrome preinstalado; Vite arranca automáticamente.
 
 Para ver las acciones en Chrome y avanzar paso a paso con el inspector:
 
@@ -29,6 +29,14 @@ Usá **Step over** para avanzar o **Resume** para continuar. Más detalles en [l
 Set `VITE_API_URL` to the application backend (default: `http://localhost:8080`). Registration calls `/api/auth/register` and redirects to login. Login receives a JWT and an HttpOnly refresh cookie; access tokens stay in memory. Reloading restores the session through `/api/auth/refresh`, and logout revokes the backend session.
 
 `npm test` runs authentication/admin contract and refresh concurrency tests using Node's built-in test runner and the existing TypeScript compiler. CI runs these tests along with `npm run lint` and `npm run build`. Tests mock HTTP responses; manually verify cookie persistence with the frontend and backend running on the same hostname (for example, both on `localhost`).
+
+## Organización del frontend
+
+`App.tsx` coordina la navegación y los avisos de la aplicación. `hooks/useSession.ts` encapsula restauración, renovación y cierre de sesión, además de los cambios de la cuenta autenticada. `components/layout/AppLayout.tsx` presenta la estructura general y los estados de restauración.
+
+Las páginas en `src/pages/` componen las secciones de cada pantalla. Los componentes visuales están organizados por responsabilidad: `components/home/`, `paquetes/`, `auth/`, `admin/` y `navigation/`. `components/forms/FormField.tsx` comparte el control de entrada sin cambiar las validaciones de cada formulario.
+
+Los hooks en `hooks/auth/` y `hooks/admin/` manejan el estado y las operaciones de cada formulario o panel. `useAsyncAction` comparte el estado de envío y sus errores, mientras que `useRemoteData` mantiene la carga y el reintento. Las operaciones HTTP siguen en `api/`, con contratos separados para usuarios, agencias y paquetes.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
