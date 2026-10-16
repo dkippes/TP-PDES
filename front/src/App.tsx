@@ -116,7 +116,7 @@ function App() {
       <main className="mx-auto max-w-6xl px-5 py-10 sm:py-14">
         {message && <p className="mb-4 text-sm text-slate-700" role="status">{message}</p>}
         {restoring ? <p role="status">Recuperando sesión...</p> : <>
-          {currentView === 'home' && <HomePage api={paquetesApi} />}
+          {currentView === 'home' && <HomePage api={paquetesApi} isAuthenticated={session !== null} onRegister={() => setView('register')} onLogin={() => setView('login')} />}
           {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={handleSessionRenewed} onSessionExpired={handleSessionExpired} onCurrentUserUpdated={handleCurrentUserUpdated} />}
           {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
           {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}

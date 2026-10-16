@@ -29,7 +29,7 @@ Given('que estoy en el formulario de {string}', async ({ page, authRequests }, f
     }
   })
   await page.goto('/')
-  await page.getByRole('button', {
+  await page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('button', {
     name: form === 'registro' ? 'Registrarse' : 'Iniciar sesión', exact: true,
   }).click()
   await expect(page.getByRole('heading', { name: heading(form), exact: true })).toBeVisible()
@@ -98,6 +98,7 @@ Then('veo la Home autenticada con el saludo {string}', async ({ page }, greeting
   await expect(page.getByText(greeting, { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Todos los paquetes' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Cerrar sesión', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Registrate o iniciá sesión' })).toHaveCount(0)
 })
 
 Then('no veo la opción de cerrar sesión', async ({ page }) => {

@@ -30,7 +30,7 @@ npx playwright show-report playwright-bdd-report
 - front/bdd/login.feature: éxito, credenciales rechazadas y correo inválido.
 - front/bdd/auth.steps.ts: pasos y respuestas de API simuladas. Cada escenario tiene un contexto de navegador independiente.
 - front/bdd/admin.feature y admin.steps.ts: ABM de usuarios/agencias, asociación de agentes, edición sin resetear contraseña, búsquedas, detalle, cancelación de baja, conflictos, restricciones de rol/cuenta propia, sesión vencida y reintento de carga.
-- front/bdd/home.feature y home.steps.ts: catálogo público completo, imágenes cargadas, regreso con Inicio desde login/Administración, lista vacía y reintento ante errores.
+- front/bdd/home.feature y home.steps.ts: catálogo público completo, imágenes cargadas, invitación de registro/login para visitantes, navegación desde sus botones, visibilidad según la sesión, diseño móvil, regreso con Inicio desde login/Administración, lista vacía y reintento ante errores.
 - front/playwright.bdd.config.ts: configuración que levanta solo Vite.
 
 Para agregar casos, editar los .feature y reutilizar pasos; si hacen falta pasos nuevos, implementarlos en el archivo de pasos correspondiente. Los pasos administrativos reutilizan la misma fixture que autenticación.
