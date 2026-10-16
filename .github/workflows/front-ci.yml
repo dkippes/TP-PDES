@@ -43,7 +43,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test authentication integration
+      - name: Test authentication and admin contracts
         run: npm test
 
   docker:

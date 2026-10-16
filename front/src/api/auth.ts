@@ -1,3 +1,7 @@
+import { readJson, sendJson } from './http'
+
+export { ApiError as AuthError } from './http'
+
 export type UsuarioAutenticado = {
   id: number
   nombre: string
@@ -22,39 +26,8 @@ type Registro = {
   password: string
 }
 
-export class AuthError extends Error {
-  readonly status: number
-
-  constructor(status: number, message: string) {
-    super(message)
-    this.status = status
-  }
-}
-
-const apiUrl = (import.meta.env?.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
-
 async function post<T>(path: string, body?: object): Promise<T> {
-  const response = await fetch(`${apiUrl}/api/auth/${path}`, {
-    method: 'POST',
-    credentials: 'include',
-    ...(body === undefined ? {} : {
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    }),
-  })
-  if (!response.ok) {
-    const error = await response.json().catch(() => null) as {
-      message?: string
-      fieldErrors?: Record<string, string>
-    } | null
-    const fields = Object.entries(error?.fieldErrors ?? {}).map(([field, message]) => `${field}: ${message}`)
-    throw new AuthError(response.status, fields.length > 0
-      ? fields.join('. ')
-      : error?.message ?? 'No se pudo completar la operación.')
-  }
-  // Logout has a successful response with no JSON body.
-  const text = await response.text()
-  return (text ? JSON.parse(text) : undefined) as T
+  return readJson<T>(await sendJson('POST', `auth/${path}`, body))
 }
 
 export const registrarUsuario = (datos: Registro) => post<UsuarioAutenticado>('register', datos)
