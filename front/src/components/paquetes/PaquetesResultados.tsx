@@ -21,17 +21,21 @@ const etiquetasOrden: Record<OrdenPaquete, string> = {
 }
 const sinResultados: PaquetesPaginaDTO = { contenido: [], pagina: 0, tamanio: 12, totalElementos: 0, totalPaginas: 0 }
 
+function resumen(loading: boolean, error: string, total: number) {
+  if (loading) return 'Buscando paquetes...'
+  if (error) return ''
+  return `${total} ${total === 1 ? 'paquete encontrado' : 'paquetes encontrados'}`
+}
+
 // Mount with a key derived from the filters: useRemoteData does not return to loading when `load` changes.
-export function PaquetesResultados({ api, filtros, agencias, onChange, onClear }: PaquetesResultadosProps) {
+export function PaquetesResultados({ api, filtros, agencias, onChange, onClear }: Readonly<PaquetesResultadosProps>) {
   const load = useCallback(() => api.buscar(filtros), [api, filtros])
   const { data, loading, error, reload } = useRemoteData<PaquetesPaginaDTO>(load, sinResultados)
 
   return <section className="space-y-5" aria-label="Resultados">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p role="status" className="font-semibold text-slate-900">
-        {loading ? 'Buscando paquetes...' : error ? '' : `${data.totalElementos} ${data.totalElementos === 1 ? 'paquete encontrado' : 'paquetes encontrados'}`}
-      </p>
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">Ordenar por
+      <output className="font-semibold text-slate-900">{resumen(loading, error, data.totalElementos)}</output>
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><span>Ordenar por</span>
         <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={filtros.orden ?? 'FECHA_ASC'} onChange={(event) => onChange({ orden: event.target.value as OrdenPaquete })}>
           {ordenesPaquete.map((orden) => <option key={orden} value={orden}>{etiquetasOrden[orden]}</option>)}
         </select>

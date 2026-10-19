@@ -13,7 +13,7 @@ type HomePageProps = {
   onSearch: (filtros: PaqueteBusquedaDTO) => void
 }
 
-export function HomePage({ api, isAuthenticated, onRegister, onLogin, onSearch }: HomePageProps) {
+export function HomePage({ api, isAuthenticated, onRegister, onLogin, onSearch }: Readonly<HomePageProps>) {
   const { data, loading, error, reload, sugerencias } = usePaquetesCatalogo(api)
   return <div className="space-y-8">
     <PaquetesSearchBar sugerencias={sugerencias} onSearch={onSearch} />

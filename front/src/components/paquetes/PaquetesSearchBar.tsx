@@ -23,7 +23,7 @@ const hoy = () => {
 }
 const conocido = (texto: string, lista: string[]) => lista.find((item) => normalizarTexto(item) === normalizarTexto(texto))
 
-export function PaquetesSearchBar({ sugerencias, initial = {}, onSearch, compact = false }: PaquetesSearchBarProps) {
+export function PaquetesSearchBar({ sugerencias, initial = {}, onSearch, compact = false }: Readonly<PaquetesSearchBarProps>) {
   const id = useId()
   const [origen, setOrigen] = useState(initial.origen ?? '')
   const [destino, setDestino] = useState(initial.destino ?? '')

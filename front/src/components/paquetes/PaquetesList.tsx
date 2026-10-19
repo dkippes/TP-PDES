@@ -8,7 +8,7 @@ type PaquetesListProps = {
   onRetry: () => void
 }
 
-export function PaquetesList({ paquetes, loading, error, onRetry }: PaquetesListProps) {
+export function PaquetesList({ paquetes, loading, error, onRetry }: Readonly<PaquetesListProps>) {
   if (loading) return <p role="status" className="py-16 text-center text-slate-500">Cargando paquetes...</p>
   if (error) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
     <p role="alert" className="text-sm text-red-700">{error}</p>

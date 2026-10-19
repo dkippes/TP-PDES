@@ -14,7 +14,7 @@ type ResultadosPageProps = {
   onBack: () => void
 }
 
-export function ResultadosPage({ api, filtros, onFiltrosChange, onBack }: ResultadosPageProps) {
+export function ResultadosPage({ api, filtros, onFiltrosChange, onBack }: Readonly<ResultadosPageProps>) {
   const { sugerencias } = usePaquetesCatalogo(api)
   const loadAgencias = useCallback(() => api.listarAgencias(), [api])
   const { data: agencias } = useRemoteData<AgenciaPublicaDTO[]>(loadAgencias, [])

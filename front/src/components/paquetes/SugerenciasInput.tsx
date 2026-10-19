@@ -38,9 +38,8 @@ export function SugerenciasInput({ id, label, placeholder, value, opciones, onCh
       event.preventDefault()
       const paso = event.key === 'ArrowDown' ? 1 : -1
       abrir()
-      setActivo((actual) => actual < 0
-        ? (paso > 0 ? 0 : visibles.length - 1)
-        : (actual + paso + visibles.length) % visibles.length)
+      const primero = paso > 0 ? 0 : visibles.length - 1
+      setActivo((actual) => actual < 0 ? primero : (actual + paso + visibles.length) % visibles.length)
     } else if (event.key === 'Enter' && mostrar && activo >= 0) {
       event.preventDefault()
       elegir(visibles[activo])
@@ -58,7 +57,8 @@ export function SugerenciasInput({ id, label, placeholder, value, opciones, onCh
       onFocus={abrir} onClick={abrir} onBlur={() => setAbierto(false)} onKeyDown={handleKeyDown} />
     {mostrar && <ul id={listaId} role="listbox" aria-label={label} className="absolute inset-x-0 top-full z-20 mt-2 max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
       {visibles.map((opcion, index) => <li key={opcion} id={`${listaId}-${index}`} role="option" aria-selected={index === activo}
-        onMouseDown={(event) => event.preventDefault()} onClick={() => elegir(opcion)}
+        // Choose on mousedown so the input keeps focus; keyboard selection goes through the input's aria-activedescendant.
+        onMouseDown={(event) => { event.preventDefault(); elegir(opcion) }}
         className={`cursor-pointer px-4 py-2 text-sm ${index === activo ? 'bg-sky-50 text-sky-800' : 'text-slate-700 hover:bg-slate-50'}`}>
         {opcion}
       </li>)}

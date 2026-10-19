@@ -6,7 +6,7 @@ type PaginacionProps = {
 
 const botonClass = 'rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50'
 
-export function Paginacion({ pagina, totalPaginas, onChange }: PaginacionProps) {
+export function Paginacion({ pagina, totalPaginas, onChange }: Readonly<PaginacionProps>) {
   if (totalPaginas <= 1) return null
   const ir = (destino: number) => {
     window.scrollTo(0, 0)

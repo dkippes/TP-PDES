@@ -7,7 +7,7 @@ type FiltrosActivosProps = {
   onChange: (cambios: PaqueteBusquedaDTO) => void
 }
 
-export function FiltrosActivos({ filtros, agencias, onChange }: FiltrosActivosProps) {
+export function FiltrosActivos({ filtros, agencias, onChange }: Readonly<FiltrosActivosProps>) {
   const chips: { etiqueta: string; quitar: PaqueteBusquedaDTO }[] = []
   if (filtros.destino) chips.push({ etiqueta: `Destino: ${filtros.destino}`, quitar: { destino: undefined } })
   if (filtros.origen) chips.push({ etiqueta: `Origen: ${filtros.origen}`, quitar: { origen: undefined } })
