@@ -66,6 +66,7 @@ class SecurityConfig(
             it.requestMatchers(
                 HttpMethod.GET,
                 "/api/health",
+                "/api/paquetes",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/v3/api-docs/**",

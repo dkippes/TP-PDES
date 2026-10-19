@@ -58,9 +58,22 @@ class CatalogAuthorizationTest {
                 HttpMethod.PUT to "/api/$catalog/999",
                 HttpMethod.DELETE to "/api/$catalog/999",
             )) {
+                if (method == HttpMethod.GET && path == "/api/paquetes") continue
                 mockMvc.perform(request(method, path)).andExpect(status().isUnauthorized)
             }
         }
+    }
+
+    @Test
+    fun `package list is public and documented without bearer authentication`() {
+        mockMvc.perform(get("/api/paquetes"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").isArray)
+        val operation = "$['paths']['/api/paquetes']['get']"
+        mockMvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$operation['security']").doesNotExist())
+            .andExpect(jsonPath("$operation['responses']['200']").exists())
     }
 
     @Test
@@ -114,6 +127,7 @@ class CatalogAuthorizationTest {
                 "/api/$catalog/{id}" to listOf("get", "put", "delete"),
             )) {
                 for (method in methods) {
+                    if (path == "/api/paquetes" && method == "get") continue
                     val operation = "$['paths']['$path']['$method']"
                     mockMvc.perform(get("/v3/api-docs"))
                         .andExpect(status().isOk)

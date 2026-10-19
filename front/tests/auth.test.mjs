@@ -1,19 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import ts from 'typescript'
-
-// Exercise the actual TypeScript modules without adding a browser test framework.
-const source = await readFile(new URL('../src/api/auth.ts', import.meta.url), 'utf8')
-const compile = (text) => ts.transpileModule(text, {
-  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
-}).outputText
-const apiUrl = 'data:text/javascript;base64,' + Buffer.from(compile(source)).toString('base64')
-const auth = await import(apiUrl)
-const sessionSource = await readFile(new URL('../src/auth/session.ts', import.meta.url), 'utf8')
-const session = await import('data:text/javascript;base64,' + Buffer.from(
-  compile(sessionSource).replace("'../api/auth'", JSON.stringify(apiUrl)),
-).toString('base64'))
+import { auth, session } from './api-modules.mjs'
 const user = { id: 1, nombre: 'Diego', apellido: 'K', correo: 'diego@example.com', direccion: 'Quilmes', role: 'COMPRADOR' }
 const login = { user, accessToken: 'token', tokenType: 'Bearer', expiresIn: 900 }
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status })

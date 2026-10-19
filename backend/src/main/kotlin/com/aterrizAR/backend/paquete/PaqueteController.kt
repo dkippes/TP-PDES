@@ -21,23 +21,22 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/paquetes")
 @Tag(name = "Paquetes", description = "ABM de paquetes turísticos (2 vuelos + 1 hotel)")
-@SecurityRequirement(name = "bearerAuth")
-@ApiResponses(value = [
-    ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-    ApiResponse(responseCode = "403", description = "El rol no permite esta operación; escritura para ADMINISTRADOR o AGENTE"),
-])
 class PaqueteController(
     private val paqueteService: PaqueteService,
 ) {
     @GetMapping
-    @Operation(summary = "Lista todos los paquetes")
+    @Operation(summary = "Lista todos los paquetes", description = "Catálogo público, disponible sin iniciar sesión")
+    @ApiResponse(responseCode = "200", description = "Listado completo de paquetes")
     fun findAll(): List<Paquete> = paqueteService.findAll()
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtiene un paquete por id")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Paquete encontrado"),
+            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+            ApiResponse(responseCode = "403", description = "El rol no permite esta operación"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
         ],
     )
@@ -46,9 +45,12 @@ class PaqueteController(
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Crea un paquete, validando hotel, agencia y disponibilidad de ambos vuelos")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "201", description = "Paquete creado"),
+            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
             ApiResponse(responseCode = "400", description = "Datos inválidos, hotel/agencia inexistente o vuelo sin disponibilidad"),
             ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
         ],
@@ -57,9 +59,12 @@ class PaqueteController(
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualiza un paquete existente")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Paquete actualizado"),
+            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
             ApiResponse(responseCode = "400", description = "Datos inválidos, hotel/agencia inexistente o vuelo sin disponibilidad"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
             ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
@@ -71,9 +76,12 @@ class PaqueteController(
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Elimina un paquete")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "204", description = "Paquete eliminado"),
+            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
         ],
     )
