@@ -7,6 +7,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { useSession } from './hooks/useSession'
 import { HomePage } from './pages/HomePage'
 import { AdminHomePage } from './pages/AdminHomePage'
+import { CompradorPage } from './pages/CompradorPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import type { View } from './types'
@@ -43,12 +44,14 @@ function App() {
       correo: usuario.correo, direccion: usuario.direccion, role: usuario.rol,
     }, passwordChanged)
   }, [updateCurrentUser])
-  const currentView = view === 'admin' && session?.user.role !== 'ADMINISTRADOR' ? 'home' : view
+  const comprador = session?.user.role === 'COMPRADOR'
+  const currentView = (view === 'admin' && session?.user.role !== 'ADMINISTRADOR') || (view === 'favoritos' && !comprador) ? 'home' : view
 
   return <AppLayout message={message} restoring={restoring} navigation={
     <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
   }>
-    {currentView === 'home' && <HomePage api={paquetesApi} isAuthenticated={session !== null} onRegister={() => setView('register')} onLogin={() => setView('login')} />}
+    {currentView === 'home' && !comprador && <HomePage api={paquetesApi} isAuthenticated={session !== null} onRegister={() => setView('register')} onLogin={() => setView('login')} />}
+    {(currentView === 'home' || currentView === 'favoritos') && comprador && session && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} onHome={() => setView('home')} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
     {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />}
     {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
     {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
