@@ -15,6 +15,17 @@ Use this file as the starting point for repository work. Confirm behavior in sou
 
 Both Kotlin services currently declare Kotlin 2.3.21 and Spring Boot 4.1.0 in their Gradle builds.
 
+## Design and scope
+
+Apply the [design and quality guidelines](Docs/design-guidelines.md) when implementing or reviewing code.
+
+- Implement the agreed ticket scope. The roadmap and enunciado do not authorize adding adjacent features; clarify dependencies before expanding scope.
+- Apply SOLID with cohesive responsibilities, composition and constructor injection. Introduce interfaces and patterns for real boundaries or variations, not speculative extension points.
+- Keep Kotlin domain invariants in services and preserve `Controller -> Service -> Repository`. Keep transport DTOs separate from JPA entities, with explicit create/update contracts when their requirements differ.
+- In React, compose function components and hooks. Keep HTTP/session mechanics separate from user/agency operations; give components only the API capabilities they consume.
+- Extract reusable presentation components when they reduce responsibilities in a panel. Avoid a generic CRUD framework for two resources with distinct rules.
+- Verify observable behavior, permissions, failure handling and idempotent fixture loading. Keep test setup isolated and share existing test utilities rather than adding another framework.
+
 ## Runtime architecture
 
 ```text
@@ -75,7 +86,7 @@ These rules apply to both Kotlin services unless a local package already establi
 - Database connection settings use Spring's `SPRING_DATASOURCE_*` variables.
 - CORS is configured through `CORS_ALLOWED_ORIGIN`.
 - Normal application properties default Hibernate schema handling to `validate`; local Compose currently overrides the application backend to `update`. Do not assume development behavior is suitable for production.
-- Catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/packages, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
+- `GET /api/paquetes` is explicitly public in `SecurityConfig`. Other catalog permissions are declared per HTTP method/path in `CatalogEndpointRules`: all three authenticated roles may read hotels/package details, only ADMINISTRADOR may write hotels, and ADMINISTRADOR/AGENTE may write packages. Unlisted endpoints remain denied. CRUD tests send production-signed JWTs through the real filter chain.
 
 ## Frontend conventions
 
@@ -90,6 +101,17 @@ These rules apply to both Kotlin services unless a local package already establi
 - Authentication integration tests use Node's built-in test runner through `npm test`; CI runs them alongside lint/build.
 - The frontend uses the existing `/api/auth/register`, `login`, `refresh`, and `logout` endpoints. Registration creates an account and redirects to login.
 - Keep access tokens in memory. Restore and renew sessions through the HttpOnly refresh cookie with `credentials: 'include'`; do not trust a user object in localStorage as authentication.
+- Inicio renders `HomePage` with all packages for visitors and authenticated users through the public `api/paquetes.ts` contract. Cards show destination, a description derived from origin/destination/hotel, and a local placeholder image. ADMINISTRADOR opens `AdminHomePage` with user/agency CRUD through Administración in the navbar; Inicio returns to the catalog. `hooks/useRemoteData.ts` shares loading/error/retry state. `api/http.ts` centralizes JSON transport and errors; `api/authenticated.ts` sends the in-memory Bearer token, shares the rotating refresh on HTTP 401 and retries once. `api/admin.ts` maps resource operations through an injected request and exposes separate `UsuariosApi` / `AgenciasApi` contracts. Transport DTOs live in `types/admin.ts`; user creation requires a password and updates may omit it. User administration returns `rol`, whereas authentication returns `user.role`.
+- Admin forms leave an unchanged password out of PUT requests, require an agency for AGENTE, and display backend validation/conflict errors. Editing the current account updates the navbar; resetting its password returns to login.
+- `App` coordinates navigation and notices; `hooks/useSession.ts` owns session restoration, renewal, logout and current-account updates. `AppLayout` handles the shared shell. Pages compose focused components: `GuestInvitation` and `PaquetesCatalog` for Inicio, `AuthCard` and separate forms for authentication, and header/sections/panels for administration. Domain hooks under `hooks/auth/` and `hooks/admin/` own form/panel state and operations. `useAsyncAction` shares pending/error handling; `FormField` shares labeled inputs while callers retain their validation. Preserve the existing HTTP boundaries and resource-specific contracts.
+- Only authenticated COMPRADOR accounts see heart buttons and Mis favoritos. `CompradorPage` shares `useFavoritos` state between the catalog and favorites view; it is keyed by user ID and unmounts on logout. `api/favoritos.ts` uses the existing authenticated transport. Loading/failure states disable hearts until the list is known. Successful mutations update local data after server confirmation, without reloading or hiding cards; their pending status is announced to screen readers without shifting the layout. `useRemoteData.updateData` prevents an older read from overwriting a confirmed mutation. Failed mutations preserve saved state and display the error.
+
+## Favorites
+
+- `GET /api/favoritos` returns only the current buyer's favorites, newest first, as `{ paquete: { id, origen, destino, hotel: { nombre } }, agregadoEn }` DTOs. `PUT /api/favoritos/{paqueteId}` and `DELETE /api/favoritos/{paqueteId}` are idempotent and return 204. Saving a missing package returns 404; removing an absent favorite or deleted package returns 204. IDs must be positive.
+- All three operations require COMPRADOR. The service obtains ownership from the signed JWT and verifies that the persisted account still has a buyer profile. It accepts no buyer ID from the client. Writes lock the user's row to serialize concurrent requests and the schema enforces one favorite per buyer/package.
+- Migration `V5__create_favorito.sql` uses `ON DELETE CASCADE` for buyer and package references. Deleting packages (including through agency deletion), deleting buyers or replacing their profile clears the corresponding favorites. Existing restrictions for purchases/reviews remain in force. Matching Hibernate `@OnDelete` mappings preserve this behavior in schema-generated H2 tests.
+- Favorites store interest, use current package data and do not reserve flights or fix a price. Administrator consultation, purchases and reviews belong to separate tickets. Keep the six existing Gherkin scenarios; favorites contract tests use the existing Node runner and backend behavior/security tests use MockMvc and production-signed JWTs.
 
 ## Local development
 
@@ -112,7 +134,9 @@ Expected local services:
 
 Compose maintains separate PostgreSQL databases and volumes for the application backend and the flying service. Do not couple their schemas or access one service's database directly from the other service.
 
-With the `dev` Spring profile (Compose's default), `DevUsersSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR) and `usuario@gmail.com` (COMPRADOR), both with password `12345678`. Existing accounts are preserved; deleted demo accounts are recreated on the next startup. The seeder is disabled outside `dev`.
+With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` creates missing demo accounts: `admin@gmail.com` (ADMINISTRADOR), `usuario@gmail.com` (COMPRADOR), `agente@gmail.com` and `agente.andino@gmail.com` (AGENTE), all with password `12345678`. It also creates Viajes del Sur, Rumbo Andino and Horizonte Turismo; the agents belong to the first two agencies. Horizonte starts without agents so its deletion can be exercised. Existing records are preserved by email; missing demo records are recreated on startup. Data is persisted in PostgreSQL through repositories after Flyway; the seeder is disabled outside `dev`.
+
+`bootstrap/DevPaquetesSeeder` creates hotels and packages for Bariloche, Córdoba and Madrid, using available future round-trip flights from flying-service through `VueloClient` and the existing `PaqueteService` validations. It preserves existing packages by agency/hotel/route across restarts. An unavailable flight service or a missing route skips package fixtures until a later startup; it does not prevent creating demo users/agencies. Existing flight fixtures must still include future flights. No cross-service database access is used.
 
 ## Build and verification commands
 
@@ -126,7 +150,10 @@ npm ci
 npm run lint
 npm test
 npm run build
+npm run test:bdd
 ```
+
+Gherkin tests require preinstalled Chrome and port 15174 to be free. See `Docs/gherkin.md` for scope and reports.
 
 Use `npm run dev` for local Vite development and `npm run preview` to inspect a production build.
 
@@ -151,6 +178,24 @@ cd flying.service
 On Windows without a POSIX shell, use `gradlew.bat` instead of `./gradlew`.
 
 CI covers frontend lint/test/build, application-backend test/build, and flying-service test/build checks.
+
+CD (`.github/workflows/cd.yml`) runs on pushed tags matching `v*.*.*`, fails unless the tagged commit is on `main`, and publishes three Docker Hub images (`aterrizar-backend`, `aterrizar-flying-service`, `aterrizar-front`) tagged `X.Y.Z`, `X.Y` and `latest`. It requires GitHub Actions secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. Create the Docker Hub repositories manually as private beforehand (a first push would create them public; the free plan allows only one private repo).
+
+`docker-compose.release.yml` is the stack for external users: it uses only the published images, has defaults for every variable (no `.env`) and no bind mounts. After the images, the CD publishes it with `docker compose publish` as OCI artifact `<usuario>/aterrizar-compose:X.Y.Z` (and `latest`), replacing the `your-dockerhub-user` placeholder and pinning the default `VERSION` to the tag. Users run `docker compose -f oci://<usuario>/aterrizar-compose:X.Y.Z up -d` and open `http://localhost:5173`. Keep `ports` in long syntax there: `docker compose publish` fails to parse short-syntax ports that contain variables. Requires Docker Compose 2.34+ on the consumer side (not verified against a real Docker Hub publish yet).
+
+Each service `Dockerfile` is multi-stage: `target: dev` (used by `docker-compose.yml`, code mounted as a volume, `bootRun`/Vite) and a final `runtime` stage that is self-contained (Kotlin services: `bootJar` on `eclipse-temurin:21-jre`; front: Vite build served by nginx on port 80). The default build, used by CI and CD, is `runtime`. The front bakes `VITE_API_URL` at build time through the `VITE_API_URL` build arg (default `http://localhost:8080`), so a published front image is tied to that backend URL.
+
+Code quality uses SonarQube Cloud project `dkippes_TP-PDES` in organization `dkippes` for the three applications. Root `sonar-project.properties` defines the scope; `.github/workflows/sonar.yml` runs on pushes/PR targeting `develop` without path filters and publishes the `Sonar Quality Gate` check. Setup and limitations are documented in `Docs/sonar.md`. Configure GitHub Actions secret `SONAR_TOKEN`; disable Sonar automatic analysis and align its main branch with `develop`.
+
+Both Kotlin services use JaCoCo 0.8.15: `gradlew.bat check sonarDependencies` generates XML/HTML coverage, enforces at least 80% total LINE COVEREDRATIO separately for each service, and exports dependency JARs for the root scanner. `check`/`build` depend on `jacocoTestCoverageVerification`; no Kotlin classes are excluded. Frontend coverage is intentionally deferred: `sonar.coverage.exclusions=front/src/**` excludes only coverage, not static analysis. Keep frontend lint/test/build; do not claim frontend coverage until LCOV is configured.
+
+## Frontend behavior tests (Gherkin)
+
+Only registration and login have Spanish Gherkin scenarios under `front/bdd/`, executed with `playwright-bdd` and preinstalled Chrome. Keep the six existing scenarios; do not add Gherkin scenarios for other functionality without an explicit request. `front/playwright.bdd.config.ts` selects those two feature files and starts only Vite on port 15174. Step definitions intercept API requests with Playwright routes; these tests verify frontend behavior with simulated responses, not backend authentication or persistence. Node contract/session tests remain separate under `front/tests/`.
+
+Run `npm run test:bdd` from `front/`. It typechecks steps, generates Playwright tests from features, and runs them. Generated `.features-gen/` is ignored. Reports are saved in `front/playwright-bdd-report/` and failures in `front/test-results-bdd/`. See `Docs/gherkin.md` for scope and commands. No Java, Docker or backend startup is needed.
+
+Use `npm run test:bdd:debug` to open Chrome and the Playwright Inspector and step through browser actions. This script includes `--debug` directly rather than relying on npm argument forwarding.
 
 ## Environment and secrets
 

@@ -1,4 +1,5 @@
 plugins {
+	jacoco
 	kotlin("jvm") version "2.3.21"
 	kotlin("plugin.spring") version "2.3.21"
 	kotlin("plugin.jpa") version "2.3.21"
@@ -45,4 +46,40 @@ kotlin {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+	toolVersion = "0.8.15"
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.jacocoTestReport)
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+// The root SonarScanner CLI needs dependency JARs for Kotlin semantic analysis.
+tasks.register<Sync>("sonarDependencies") {
+	from(configurations.testRuntimeClasspath)
+	into(layout.buildDirectory.dir("sonar/libraries"))
 }

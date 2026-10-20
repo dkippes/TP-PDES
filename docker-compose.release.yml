@@ -1,0 +1,110 @@
+# Stack completo a partir de las imágenes publicadas en Docker Hub (sin clonar el repo).
+# Todo tiene valores por defecto: no hace falta un .env.
+#
+#   docker compose -f oci://<usuario>/aterrizar-compose:<version> up -d
+#   -> http://localhost:5173
+#
+# El CD reemplaza "your-dockerhub-user" por el usuario real antes de publicar este archivo.
+# Variables opcionales: VERSION, FRONT_PORT, BACKEND_PORT, JWT_SECRET, SPRING_PROFILES_ACTIVE.
+# El front trae la URL del backend fija en el build (http://localhost:8080): no cambiar BACKEND_PORT.
+name: aterrizar-release
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aterrizar_db
+      POSTGRES_USER: aterrizar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aterrizar123}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aterrizar -d aterrizar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+  flying-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: flying_db
+      POSTGRES_USER: flying
+      POSTGRES_PASSWORD: ${FLYING_POSTGRES_PASSWORD:-flying123}
+    volumes:
+      - flying-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flying -d flying_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+  flying-service:
+    image: ${DOCKERHUB_USERNAME:-your-dockerhub-user}/aterrizar-flying-service:${VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://flying-postgres:5432/flying_db
+      SPRING_DATASOURCE_USERNAME: flying
+      SPRING_DATASOURCE_PASSWORD: ${FLYING_POSTGRES_PASSWORD:-flying123}
+      CORS_ALLOWED_ORIGIN: http://localhost:${FRONT_PORT:-5173}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    depends_on:
+      flying-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+    networks:
+      - app-network
+  backend:
+    image: ${DOCKERHUB_USERNAME:-your-dockerhub-user}/aterrizar-backend:${VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aterrizar_db
+      SPRING_DATASOURCE_USERNAME: aterrizar
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-aterrizar123}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-min-32-chars-long-change-me-in-prod}
+      REFRESH_COOKIE_SECURE: "false"
+      FLYING_SERVICE_URL: http://flying-service:8081
+      CORS_ALLOWED_ORIGIN: http://localhost:${FRONT_PORT:-5173}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports:
+      - target: 8080
+        published: "${BACKEND_PORT:-8080}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flying-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+    networks:
+      - app-network
+  frontend:
+    image: ${DOCKERHUB_USERNAME:-your-dockerhub-user}/aterrizar-front:${VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - target: 80
+        published: "${FRONT_PORT:-5173}"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+volumes:
+  pgdata:
+  flying-pgdata:
+networks:
+  app-network:

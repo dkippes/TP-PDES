@@ -1,0 +1,93 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonar:
+    name: Sonar Quality Gate
+    # Fork PRs do not receive the Sonar token. Never use pull_request_target to run their code.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Validate Sonar configuration
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::error::Configure the SONAR_TOKEN repository secret. See Docs/sonar.md."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Backend tests, coverage and analysis dependencies
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew check sonarDependencies --no-daemon
+
+      - name: Flying service tests, coverage and analysis dependencies
+        working-directory: flying.service
+        run: |
+          chmod +x gradlew
+          ./gradlew check sonarDependencies --no-daemon
+
+      - name: Frontend checks
+        working-directory: front
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Sonar analysis and Quality Gate
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: Upload coverage and test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-test-and-coverage-reports
+          if-no-files-found: warn
+          path: |
+            backend/build/reports/tests/test/
+            backend/build/reports/jacoco/test/
+            flying.service/build/reports/tests/test/
+            flying.service/build/reports/jacoco/test/

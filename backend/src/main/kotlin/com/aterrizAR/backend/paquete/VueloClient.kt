@@ -4,16 +4,19 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
+import java.time.LocalDate
 
 /**
- * Consulta puntual de vuelos contra flying-service. Solo necesitamos saber si el vuelo
- * existe y cuánta disponibilidad le queda para poder armar un paquete.
+ * Acceso al catálogo de flying-service para validar vuelos y vincular los datos demo.
  */
 @Component
 class VueloClient(
     private val restTemplate: RestTemplate,
     @Value("\${flying.service.url:http://flying-service:8081}") private val flyingServiceUrl: String,
 ) {
+    fun findAll(): List<VueloCatalogoDTO> =
+        restTemplate.getForObject("$flyingServiceUrl/vuelos", Array<VueloCatalogoDTO>::class.java)?.toList().orEmpty()
+
     fun findDisponibilidad(vueloId: Long): Int? =
         try {
             restTemplate.getForObject("$flyingServiceUrl/vuelos/$vueloId", VueloResponse::class.java)?.disponibilidad
@@ -21,6 +24,14 @@ class VueloClient(
             null
         }
 }
+
+data class VueloCatalogoDTO(
+    val id: Long,
+    val origen: String,
+    val destino: String,
+    val fecha: LocalDate,
+    val disponibilidad: Int,
+)
 
 data class VueloResponse(
     val id: Long? = null,
