@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param
 
 interface FavoritoRepository : JpaRepository<Favorito, Long> {
     @Query("""
-        SELECT f FROM Favorito f JOIN FETCH f.paquete p JOIN FETCH p.hotel
+        SELECT f FROM Favorito f JOIN FETCH f.paquete p JOIN FETCH p.hotel JOIN FETCH p.agencia
         WHERE f.comprador.id = :compradorId ORDER BY f.agregadoEn DESC, f.id DESC
     """)
     fun findAllDelComprador(@Param("compradorId") compradorId: Long): List<Favorito>

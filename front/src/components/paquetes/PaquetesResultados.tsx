@@ -1,11 +1,12 @@
 import { useCallback } from 'react'
 import type { PaquetesApi } from '../../api/paquetes'
 import { useRemoteData } from '../../hooks/useRemoteData'
+import type { FavoritosControls } from '../../types/favorito'
 import { ordenesPaquete } from '../../types/paquete'
 import type { AgenciaPublicaDTO, OrdenPaquete, PaqueteBusquedaDTO, PaquetesPaginaDTO } from '../../types/paquete'
 import { FiltrosActivos } from './FiltrosActivos'
-import { PaqueteCard } from './PaqueteCard'
 import { Paginacion } from './Paginacion'
+import { PaquetesGrid } from './PaquetesGrid'
 
 type PaquetesResultadosProps = {
   api: PaquetesApi
@@ -13,6 +14,7 @@ type PaquetesResultadosProps = {
   agencias: AgenciaPublicaDTO[]
   onChange: (cambios: PaqueteBusquedaDTO, conservarPagina?: boolean) => void
   onClear: () => void
+  favoritos?: FavoritosControls
 }
 
 const etiquetasOrden: Record<OrdenPaquete, string> = {
@@ -28,7 +30,7 @@ function resumen(loading: boolean, error: string, total: number) {
 }
 
 // Mount with a key derived from the filters: useRemoteData does not return to loading when `load` changes.
-export function PaquetesResultados({ api, filtros, agencias, onChange, onClear }: Readonly<PaquetesResultadosProps>) {
+export function PaquetesResultados({ api, filtros, agencias, onChange, onClear, favoritos }: Readonly<PaquetesResultadosProps>) {
   const load = useCallback(() => api.buscar(filtros), [api, filtros])
   const { data, loading, error, reload } = useRemoteData<PaquetesPaginaDTO>(load, sinResultados)
 
@@ -50,9 +52,7 @@ export function PaquetesResultados({ api, filtros, agencias, onChange, onClear }
       <p className="text-slate-500">No encontramos paquetes con esos filtros.</p>
       <button type="button" onClick={onClear} className="mt-5 rounded-lg bg-sky-700 px-5 py-2.5 font-semibold text-white hover:bg-sky-800">Limpiar filtros</button>
     </div>}
-    <div className="grid gap-6 md:grid-cols-2">
-      {data.contenido.map((paquete) => <PaqueteCard key={paquete.id} paquete={paquete} />)}
-    </div>
+    <PaquetesGrid paquetes={data.contenido} favoritos={favoritos} className="grid gap-6 md:grid-cols-2" />
     {!loading && !error && <Paginacion pagina={data.pagina} totalPaginas={data.totalPaginas} onChange={(pagina) => onChange({ pagina }, true)} />}
   </section>
 }

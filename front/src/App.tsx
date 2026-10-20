@@ -16,6 +16,8 @@ import type { UsuarioResponseDTO } from './types/admin'
 import type { PaqueteBusquedaDTO } from './types/paquete'
 
 const paquetesApi = createPaquetesApi(requestJson)
+const vistasComprador = ['home', 'favoritos', 'resultados'] as const
+const esVistaComprador = (view: View): view is typeof vistasComprador[number] => (vistasComprador as readonly View[]).includes(view)
 
 function App() {
   const [view, setView] = useState<View>('home')
@@ -58,9 +60,9 @@ function App() {
   return <AppLayout message={message} restoring={restoring} navigation={
     <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
   }>
-    {currentView === 'home' && !comprador && <HomePage api={paquetesApi} isAuthenticated={session !== null} onRegister={() => setView('register')} onLogin={() => setView('login')} onSearch={handleSearch} />}
-    {(currentView === 'home' || currentView === 'favoritos') && comprador && session && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} onHome={() => setView('home')} onSearch={handleSearch} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
-    {currentView === 'resultados' && <ResultadosPage api={paquetesApi} filtros={busqueda} onFiltrosChange={setBusqueda} onBack={() => setView('home')} />}
+    {comprador && session && esVistaComprador(currentView) && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} busqueda={busqueda} onBusquedaChange={setBusqueda} onSearch={handleSearch} onHome={() => setView('home')} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
+    {!comprador && currentView === 'home' && <HomePage api={paquetesApi} onSearch={handleSearch} invitacion={session ? undefined : { onRegister: () => setView('register'), onLogin: () => setView('login') }} />}
+    {!comprador && currentView === 'resultados' && <ResultadosPage api={paquetesApi} filtros={busqueda} onFiltrosChange={setBusqueda} onBack={() => setView('home')} />}
     {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />}
     {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
     {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
