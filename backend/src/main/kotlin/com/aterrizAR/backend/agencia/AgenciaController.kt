@@ -24,19 +24,18 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/agencias")
 @Tag(name = "Agencias", description = "ABM de agencias")
-@SecurityRequirement(name = "bearerAuth")
-@ApiResponses(value = [
-    ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-    ApiResponse(responseCode = "403", description = "Operación no permitida: crear/eliminar solo ADMINISTRADOR; actualizar ADMINISTRADOR o AGENTE de la agencia"),
-])
 class AgenciaController(private val agenciaService: AgenciaService) {
     @GetMapping
-    @Operation(summary = "Lista todas las agencias")
+    @Operation(summary = "Lista todas las agencias", description = "Listado público, disponible sin iniciar sesión")
+    @ApiResponse(responseCode = "200", description = "Listado completo de agencias")
     fun findAll(): List<AgenciaResponseDTO> = agenciaService.findAll().map { it.toDTO() }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtiene una agencia por id")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
+        ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+        ApiResponse(responseCode = "403", description = "Lectura para cualquier rol autenticado"),
         ApiResponse(responseCode = "200", description = "Agencia encontrada"),
         ApiResponse(responseCode = "404", description = "Agencia no encontrada"),
     ])
@@ -45,7 +44,10 @@ class AgenciaController(private val agenciaService: AgenciaService) {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Crea una agencia")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
+        ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+        ApiResponse(responseCode = "403", description = "Crear solo ADMINISTRADOR"),
         ApiResponse(responseCode = "201", description = "Agencia creada"),
         ApiResponse(responseCode = "400", description = "Nombre o email inválido"),
         ApiResponse(responseCode = "409", description = "Email duplicado"),
@@ -55,7 +57,10 @@ class AgenciaController(private val agenciaService: AgenciaService) {
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualiza una agencia", description = "ADMINISTRADOR puede actualizar cualquier agencia; AGENTE solo la agencia asociada a su perfil")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
+        ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+        ApiResponse(responseCode = "403", description = "ADMINISTRADOR o AGENTE de la agencia"),
         ApiResponse(responseCode = "200", description = "Agencia actualizada"),
         ApiResponse(responseCode = "400", description = "Nombre o email inválido"),
         ApiResponse(responseCode = "404", description = "Agencia no encontrada"),
@@ -70,7 +75,10 @@ class AgenciaController(private val agenciaService: AgenciaService) {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Elimina una agencia y sus paquetes en cascada si no hay referencias que lo impidan")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
+        ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+        ApiResponse(responseCode = "403", description = "Eliminar solo ADMINISTRADOR"),
         ApiResponse(responseCode = "204", description = "Agencia eliminada"),
         ApiResponse(responseCode = "404", description = "Agencia no encontrada"),
         ApiResponse(responseCode = "409", description = "Referencias existentes impiden eliminar la agencia"),

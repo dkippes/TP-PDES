@@ -48,6 +48,8 @@ class CatalogAuthorizationTest {
         ),
     )
 
+    private val publicLists = setOf("/api/paquetes", "/api/agencias")
+
     @Test
     fun `catalog endpoints require authentication`() {
         for (catalog in listOf("hoteles", "paquetes", "agencias")) {
@@ -58,7 +60,7 @@ class CatalogAuthorizationTest {
                 HttpMethod.PUT to "/api/$catalog/999",
                 HttpMethod.DELETE to "/api/$catalog/999",
             )) {
-                if (method == HttpMethod.GET && path == "/api/paquetes") continue
+                if (method == HttpMethod.GET && path in publicLists) continue
                 mockMvc.perform(request(method, path)).andExpect(status().isUnauthorized)
             }
         }
@@ -74,6 +76,25 @@ class CatalogAuthorizationTest {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$operation['security']").doesNotExist())
             .andExpect(jsonPath("$operation['responses']['200']").exists())
+    }
+
+    @Test
+    fun `agency list and package search are public while details still require authentication`() {
+        mockMvc.perform(get("/api/agencias")).andExpect(status().isOk).andExpect(jsonPath("$").isArray)
+        mockMvc.perform(get("/api/paquetes/buscar")).andExpect(status().isOk)
+        mockMvc.perform(get("/api/agencias/999")).andExpect(status().isUnauthorized)
+        mockMvc.perform(get("/api/paquetes/999")).andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `agency list and package search are documented without bearer authentication`() {
+        for (path in listOf("/api/agencias", "/api/paquetes/buscar")) {
+            val operation = "$['paths']['$path']['get']"
+            mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$operation['security']").doesNotExist())
+                .andExpect(jsonPath("$operation['responses']['200']").exists())
+        }
     }
 
     @Test
@@ -127,7 +148,7 @@ class CatalogAuthorizationTest {
                 "/api/$catalog/{id}" to listOf("get", "put", "delete"),
             )) {
                 for (method in methods) {
-                    if (path == "/api/paquetes" && method == "get") continue
+                    if (path in publicLists && method == "get") continue
                     val operation = "$['paths']['$path']['$method']"
                     mockMvc.perform(get("/v3/api-docs"))
                         .andExpect(status().isOk)
