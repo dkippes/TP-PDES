@@ -2,9 +2,10 @@ import { useCallback } from 'react'
 import type { PaquetesApi } from '../../api/paquetes'
 import { useRemoteData } from '../../hooks/useRemoteData'
 import type { PaqueteResponseDTO } from '../../types/paquete'
-import { PaqueteCard } from './PaqueteCard'
+import type { FavoritosControls } from '../../types/favorito'
+import { PaquetesGrid } from './PaquetesGrid'
 
-export function PaquetesList({ api }: { api: PaquetesApi }) {
+export function PaquetesList({ api, favoritos }: { api: PaquetesApi; favoritos?: FavoritosControls }) {
   const load = useCallback(() => api.listar(), [api])
   const { data, loading, error, reload } = useRemoteData<PaqueteResponseDTO[]>(load, [])
 
@@ -15,7 +16,5 @@ export function PaquetesList({ api }: { api: PaquetesApi }) {
   </div>
   if (data.length === 0) return <p className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500">Todavía no hay paquetes disponibles.</p>
 
-  return <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {data.map((paquete) => <PaqueteCard key={paquete.id} paquete={paquete} />)}
-  </div>
+  return <PaquetesGrid paquetes={data} favoritos={favoritos} />
 }
