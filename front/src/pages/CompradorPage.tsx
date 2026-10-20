@@ -23,10 +23,11 @@ type CompradorPageProps = SessionEvents & {
   onBusquedaChange: (filtros: PaqueteBusquedaDTO) => void
   onSearch: (filtros: PaqueteBusquedaDTO) => void
   onHome: () => void
+  onCompras: () => void
 }
 
 /** Buyer views share favorites, purchases and one purchase dialog, so they survive navigating between views. */
-export function CompradorPage({ session, paquetesApi, view, busqueda, onBusquedaChange, onSearch, onHome, onSessionRenewed, onSessionExpired }: CompradorPageProps) {
+export function CompradorPage({ session, paquetesApi, view, busqueda, onBusquedaChange, onSearch, onHome, onCompras, onSessionRenewed, onSessionExpired }: CompradorPageProps) {
   const request = useMemo(() => createAuthenticatedRequest(session.accessToken, { onSessionRenewed, onSessionExpired }),
     [session.accessToken, onSessionRenewed, onSessionExpired])
   const favoritosApi = useMemo(() => createFavoritosApi(request), [request])
@@ -46,6 +47,7 @@ export function CompradorPage({ session, paquetesApi, view, busqueda, onBusqueda
   return <>
     {vista()}
     {compra.paquete && <CompraModal paquete={compra.paquete} compra={compra.compra} busy={compra.busy} error={compra.error}
-      onConfirm={() => void compra.confirmar()} onClose={compra.cerrar} />}
+      onConfirm={() => void compra.confirmar()} onClose={compra.cerrar}
+      onVerCompras={() => { compra.cerrar(); onCompras() }} />}
   </>
 }
