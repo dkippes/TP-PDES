@@ -7,5 +7,6 @@ import org.springframework.http.HttpMethod
 
 @Configuration(proxyBeanMethods = false)
 class CompraEndpointRules {
+    @Bean fun compraListRule() = EndpointRoleRule(HttpMethod.GET, "/api/compras", setOf(Roles.COMPRADOR))
     @Bean fun compraCreateRule() = EndpointRoleRule(HttpMethod.POST, "/api/compras", setOf(Roles.COMPRADOR))
 }

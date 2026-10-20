@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -22,6 +23,17 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Compras", description = "Compras de paquetes del comprador autenticado")
 @SecurityRequirement(name = "bearerAuth")
 class CompraController(private val compraService: CompraService) {
+    @GetMapping
+    @Operation(summary = "Lista las compras propias, de la más reciente a la más antigua")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Compras del comprador, con el precio pagado y los datos actuales del paquete"),
+        ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
+        ApiResponse(responseCode = "403", description = "Solo disponible para COMPRADOR"),
+        ApiResponse(responseCode = "404", description = "El usuario del token ya no existe"),
+    ])
+    fun listar(@Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt): List<CompraResponseDTO> =
+        compraService.listar(UsuarioAutenticado.from(jwt)).map { it.toDTO() }
+
     @PostMapping
     @Operation(
         summary = "Compra un paquete",

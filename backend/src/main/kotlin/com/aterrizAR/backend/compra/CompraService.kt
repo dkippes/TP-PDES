@@ -26,6 +26,12 @@ class CompraService(
     private val paqueteRepository: PaqueteRepository,
     private val vueloClient: VueloClient,
 ) {
+    @Transactional(readOnly = true)
+    fun listar(autenticado: UsuarioAutenticado): List<Compra> {
+        val comprador = usuarioRepository.findByIdOrNull(autenticado.id).comoComprador("ver compras")
+        return compraRepository.findAllDelComprador(requireNotNull(comprador.id))
+    }
+
     /**
      * Sells the package flights and stores the purchase at the current package price. The flights are sold first:
      * if storing fails, retrying with the same [CompraRequestDTO.operacionId] gets the original sale back from flying-service.
