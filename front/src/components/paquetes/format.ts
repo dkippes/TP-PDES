@@ -26,3 +26,14 @@ export function formatFecha(iso: string) {
 
 export const formatRango = (desde: string, hasta: string) =>
   `${formatFecha(desde)} – ${formatFecha(hasta)}`;
+
+const fechaCompleta = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+export function formatFechaCompleta(iso: string) {
+  const [anio, mes, dia] = iso.split("-").map(Number);
+  return fechaCompleta.format(new Date(anio, mes - 1, dia));
+}

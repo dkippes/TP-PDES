@@ -16,7 +16,7 @@ import type { UsuarioResponseDTO } from './types/admin'
 import type { PaqueteBusquedaDTO } from './types/paquete'
 
 const paquetesApi = createPaquetesApi(requestJson)
-const vistasComprador = ['home', 'favoritos', 'resultados'] as const
+const vistasComprador = ['home', 'favoritos', 'compras', 'resultados'] as const
 const esVistaComprador = (view: View): view is typeof vistasComprador[number] => (vistasComprador as readonly View[]).includes(view)
 
 function App() {
@@ -55,7 +55,7 @@ function App() {
     }, passwordChanged)
   }, [updateCurrentUser])
   const comprador = session?.user.role === 'COMPRADOR'
-  const currentView = (view === 'admin' && session?.user.role !== 'ADMINISTRADOR') || (view === 'favoritos' && !comprador) ? 'home' : view
+  const currentView = (view === 'admin' && session?.user.role !== 'ADMINISTRADOR') || ((view === 'favoritos' || view === 'compras') && !comprador) ? 'home' : view
 
   return <AppLayout message={message} restoring={restoring} navigation={
     <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />

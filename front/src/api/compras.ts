@@ -10,10 +10,12 @@ export interface CompraIntento {
 
 export interface ComprasApi {
   iniciar(paqueteId: number): CompraIntento
+  listar(): Promise<CompraResponseDTO[]>
 }
 
 export function createComprasApi(request: JsonRequest, generarId: () => string = () => crypto.randomUUID()): ComprasApi {
   return {
+    listar: () => request<CompraResponseDTO[]>('GET', 'compras'),
     iniciar: (paqueteId) => {
       const body: CompraRequestDTO = { paqueteId, operacionId: generarId() }
       return { ...body, confirmar: () => request<CompraResponseDTO>('POST', 'compras', body) }

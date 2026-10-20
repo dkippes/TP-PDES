@@ -12,7 +12,7 @@ function mensajeDeError(exception: unknown): string {
 }
 
 /** Opening a package starts a new attempt; confirming again after a failure retries that same attempt. */
-export function useCompra(api: ComprasApi) {
+export function useCompra(api: ComprasApi, onCompra?: (compra: CompraResponseDTO) => void) {
   const [seleccion, setSeleccion] = useState<{ paquete: PaqueteResponseDTO; intento: CompraIntento } | null>(null)
   const [compra, setCompra] = useState<CompraResponseDTO | null>(null)
   const [busy, setBusy] = useState(false)
@@ -34,7 +34,9 @@ export function useCompra(api: ComprasApi) {
     setBusy(true)
     setError('')
     try {
-      setCompra(await seleccion.intento.confirmar())
+      const confirmada = await seleccion.intento.confirmar()
+      setCompra(confirmada)
+      onCompra?.(confirmada)
     } catch (exception) {
       setError(mensajeDeError(exception))
     } finally {
