@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 type Props = { title: string; children: ReactNode; busy: boolean; onClose: () => void }
 
-export function AdminModal({ title, children, busy, onClose }: Props) {
+export function Modal({ title, children, busy, onClose }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   useEffect(() => {

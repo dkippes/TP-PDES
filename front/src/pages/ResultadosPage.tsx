@@ -7,7 +7,7 @@ import { PaquetesSearchBar } from '../components/paquetes/PaquetesSearchBar'
 import { usePaquetesCatalogo } from '../hooks/usePaquetesCatalogo'
 import { useRemoteData } from '../hooks/useRemoteData'
 import type { FavoritosControls } from '../types/favorito'
-import type { AgenciaPublicaDTO, PaqueteBusquedaDTO } from '../types/paquete'
+import type { AgenciaPublicaDTO, PaqueteBusquedaDTO, PaqueteResponseDTO } from '../types/paquete'
 
 type ResultadosPageProps = {
   api: PaquetesApi
@@ -15,9 +15,10 @@ type ResultadosPageProps = {
   onFiltrosChange: (filtros: PaqueteBusquedaDTO) => void
   onBack: () => void
   favoritos?: FavoritosControls
+  onComprar?: (paquete: PaqueteResponseDTO) => void
 }
 
-export function ResultadosPage({ api, filtros, onFiltrosChange, onBack, favoritos }: Readonly<ResultadosPageProps>) {
+export function ResultadosPage({ api, filtros, onFiltrosChange, onBack, favoritos, onComprar }: Readonly<ResultadosPageProps>) {
   const { sugerencias } = usePaquetesCatalogo(api)
   const loadAgencias = useCallback(() => api.listarAgencias(), [api])
   const { data: agencias } = useRemoteData<AgenciaPublicaDTO[]>(loadAgencias, [])
@@ -35,7 +36,7 @@ export function ResultadosPage({ api, filtros, onFiltrosChange, onBack, favorito
     {favoritos && <FavoritosStatus favoritos={favoritos} />}
     <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
       <PaquetesFiltros key={`filtros-${clave}`} filtros={filtros} agencias={agencias} onChange={cambiar} />
-      <PaquetesResultados key={`resultados-${clave}`} api={api} filtros={filtros} agencias={agencias} onChange={cambiar} onClear={() => onFiltrosChange({})} favoritos={favoritos} />
+      <PaquetesResultados key={`resultados-${clave}`} api={api} filtros={filtros} agencias={agencias} onChange={cambiar} onClear={() => onFiltrosChange({})} favoritos={favoritos} onComprar={onComprar} />
     </div>
   </div>
 }

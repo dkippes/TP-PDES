@@ -119,6 +119,14 @@ These rules apply to both Kotlin services unless a local package already establi
 - Availability is checked and decremented with one conditional UPDATE per flight (`VueloRepository.descontarAsiento`), in ascending ID order. Do not replace it with read-then-save: concurrent sales would oversell.
 - `operacionId` (UUID) is an idempotency key persisted by migration `V2__create_venta.sql`. Repeating it with the same flights returns the original sale with 200 and sells nothing; with different flights it returns 409, as does a concurrent request still holding the same key. Sold flights are stored by ID without a foreign key, so flight deletion is unchanged.
 
+## Package purchases
+
+- `POST /api/compras` with `{ paqueteId, operacionId }` buys one package for the authenticated COMPRADOR (owner taken from the JWT) and returns `{ id, operacionId, precio, fecha, paquete }`, with `paquete` in the catalog shape. `precio` copies the package price at purchase time; later price changes do not alter it.
+- Frontend: only COMPRADOR cards show "Comprar", which opens `CompraModal` (shared `components/Modal.tsx` dialog) from Inicio, resultados and Mis favoritos; `CompradorPage` owns one `useCompra` state. `api/compras.ts` exposes `iniciar(paqueteId)`, which creates an attempt with its `operacionId` (`crypto.randomUUID()`, so it needs HTTPS or localhost); every confirmation and retry of that attempt sends the same key, and reopening the dialog starts a new one. 409 and 503 show specific messages in the dialog; success shows the price paid returned by the backend. There is no purchases list yet (no GET endpoint).
+- The frontend generates `operacionId` (UUID) per purchase attempt. The backend sells `[vueloIdaId, vueloVueltaId]` through `VueloClient.vender` (`POST /vuelos/venta` with the same `operacionId`) and then stores the `Compra`. If storing fails, retrying the same key gets the original sale back from flying-service without selling another seat.
+- Responses: 201 new purchase; 200 when the same buyer repeats the key for the same package (flying-service is not called again); 409 when the key belongs to another buyer or package, or flying-service rejects the sale with 404/409 (missing flight, no availability); 503 when flying-service is unreachable or answers any other error (other 4xx are integration failures); 404 missing package; 400 missing/invalid fields. Nothing is stored on failure.
+- The buyer's `usuario` row is locked for the whole purchase (including the flying-service call) so duplicate submissions serialize. Migration `V6__add_operacion_id_to_compra.sql` makes `compra.operacion_id` unique and required.
+
 ## Local development
 
 The repository-level development path is Docker Compose:
