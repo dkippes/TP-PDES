@@ -4,13 +4,68 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  tag:
+    name: Resolve release tag
+    # Manual tag pushes, or a merged PR into main from a release/* branch.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      ref: ${{ steps.version.outputs.ref }}
+    steps:
+      - name: Resolve version
+        id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            version="${GITHUB_REF_NAME#v}"
+            ref="$GITHUB_SHA"
+          else
+            version="${HEAD_REF#release/}"
+            version="${version#v}"
+            ref="$MERGE_SHA"
+          fi
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Branch '$HEAD_REF' must be named release/X.Y.Z to derive a version."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag on the merge commit
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.version.outputs.ref }}
+        run: |
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/v${VERSION}" --jq '.object.sha' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            echo "::error::Tag v${VERSION} already exists; bump the release branch version."
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f ref="refs/tags/v${VERSION}" -f sha="$SHA"
+
   publish:
     name: Publish ${{ matrix.service }} image
+    needs: tag
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,13 +84,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.tag.outputs.ref }}
           fetch-depth: 0
 
       - name: Verify tag belongs to main
+        env:
+          RELEASE_SHA: ${{ needs.tag.outputs.ref }}
         run: |
           git fetch origin main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::Tag $GITHUB_REF_NAME is not on main; releases must be tagged after merging into main."
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "::error::Release v${{ needs.tag.outputs.version }} is not on main; releases must be tagged after merging into main."
             exit 1
           fi
 
@@ -54,8 +112,8 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=v${{ needs.tag.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.tag.outputs.version }}
             type=raw,value=latest
 
       - name: Build and push
@@ -70,11 +128,13 @@ jobs:
 
   publish-compose:
     name: Publish compose stack
-    needs: publish
+    needs: [tag, publish]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag.outputs.ref }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -85,8 +145,9 @@ jobs:
       - name: Prepare compose file
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          RELEASE_VERSION: ${{ needs.tag.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="$RELEASE_VERSION"
           mkdir -p dist
           sed -e "s|your-dockerhub-user|${DOCKERHUB_USERNAME}|" \
               -e "s|\${VERSION:-latest}|\${VERSION:-${version}}|" \
@@ -97,8 +158,9 @@ jobs:
       - name: Publish compose as OCI artifact
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          RELEASE_VERSION: ${{ needs.tag.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="$RELEASE_VERSION"
           cd dist
           docker compose publish -y "${DOCKERHUB_USERNAME}/aterrizar-compose:${version}"
           docker compose publish -y "${DOCKERHUB_USERNAME}/aterrizar-compose:latest"
