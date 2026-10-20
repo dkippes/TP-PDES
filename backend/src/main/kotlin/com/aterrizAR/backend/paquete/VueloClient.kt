@@ -2,12 +2,14 @@ package com.aterrizAR.backend.paquete
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.time.LocalDate
+import java.util.UUID
 
 /**
- * Acceso al catálogo de flying-service para validar vuelos y vincular los datos demo.
+ * Acceso a flying-service para validar vuelos, vincular los datos demo y vender los asientos de una compra.
  */
 @Component
 class VueloClient(
@@ -23,7 +25,24 @@ class VueloClient(
         } catch (e: RestClientException) {
             null
         }
+
+    /** Sells one seat per flight, all or nothing. Repeating [operacionId] with the same flights sells nothing new. */
+    fun vender(operacionId: UUID, vueloIds: List<Long>): ResultadoVentaVuelos =
+        try {
+            restTemplate.postForEntity("$flyingServiceUrl/vuelos/venta", VentaVuelosRequestDTO(operacionId, vueloIds), Void::class.java)
+            ResultadoVentaVuelos.VENDIDA
+        } catch (e: HttpClientErrorException) {
+            // Only a missing flight or a lack of seats is a rejection; other client errors are integration failures.
+            if (e is HttpClientErrorException.NotFound || e is HttpClientErrorException.Conflict) ResultadoVentaVuelos.RECHAZADA
+            else ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE
+        } catch (e: RestClientException) {
+            ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE
+        }
 }
+
+enum class ResultadoVentaVuelos { VENDIDA, RECHAZADA, SERVICIO_NO_DISPONIBLE }
+
+data class VentaVuelosRequestDTO(val operacionId: UUID, val vueloIds: List<Long>)
 
 data class VueloCatalogoDTO(
     val id: Long,

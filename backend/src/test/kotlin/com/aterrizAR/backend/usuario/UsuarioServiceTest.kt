@@ -12,6 +12,7 @@ import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.paquete.PaqueteRepository
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import java.time.LocalDate
+import java.util.UUID
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -319,8 +320,8 @@ class UsuarioServiceTest {
         val agencia = agencia()
         val paquete = paquete(agencia)
         jdbcTemplate.update(
-            "INSERT INTO compra (precio, fecha, paquete_id, agencia_id, comprador_id) VALUES (?, ?, ?, ?, ?)",
-            100f, LocalDate.of(2026, 9, 1), paquete.id, agencia.id, comprador.perfil.id,
+            "INSERT INTO compra (operacion_id, precio, fecha, paquete_id, agencia_id, comprador_id) VALUES (?, ?, ?, ?, ?, ?)",
+            UUID.randomUUID(), 100f, LocalDate.of(2026, 9, 1), paquete.id, agencia.id, comprador.perfil.id,
         )
 
         val exception = assertThrows(ResponseStatusException::class.java) {
