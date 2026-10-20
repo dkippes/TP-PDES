@@ -7,9 +7,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -28,6 +30,20 @@ class PaqueteController(
     @Operation(summary = "Lista todos los paquetes", description = "Catálogo público, disponible sin iniciar sesión")
     @ApiResponse(responseCode = "200", description = "Listado completo de paquetes")
     fun findAll(): List<Paquete> = paqueteService.findAll()
+
+    @GetMapping("/buscar")
+    @Operation(
+        summary = "Busca paquetes con filtros, orden y paginación",
+        description = "Búsqueda pública, disponible sin iniciar sesión. Todos los filtros son opcionales y se combinan con AND",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Página de paquetes que cumplen los filtros"),
+            ApiResponse(responseCode = "400", description = "Parámetros inválidos o rangos invertidos (precioMin > precioMax, fechaDesde > fechaHasta)"),
+        ],
+    )
+    fun buscar(@Valid @ParameterObject @ModelAttribute filtros: PaqueteBusquedaDTO): PaquetesPaginaDTO =
+        paqueteService.buscar(filtros).toDTO()
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtiene un paquete por id")

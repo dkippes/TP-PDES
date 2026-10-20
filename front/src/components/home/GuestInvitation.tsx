@@ -1,4 +1,4 @@
-type GuestInvitationProps = { onRegister: () => void; onLogin: () => void }
+export type GuestInvitationProps = { onRegister: () => void; onLogin: () => void }
 
 export function GuestInvitation({ onRegister, onLogin }: GuestInvitationProps) {
   return <section aria-labelledby="home-invitation-title" className="flex flex-col gap-5 rounded-2xl border border-sky-200 bg-sky-50 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">

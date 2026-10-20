@@ -102,6 +102,12 @@ class FavoritoControllerTest {
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].paquete.id").value(paquete.id!!))
             .andExpect(jsonPath("$[0].paquete.hotel.nombre").value(hotel.nombre))
+            // Same package shape as the catalog, which the shared package card renders.
+            .andExpect(jsonPath("$[0].paquete.hotel.pais").value(hotel.pais))
+            .andExpect(jsonPath("$[0].paquete.agencia.nombre").value(paquete.agencia.nombre))
+            .andExpect(jsonPath("$[0].paquete.fechaInicial").value(paquete.fechaInicial.toString()))
+            .andExpect(jsonPath("$[0].paquete.fechaFinal").value(paquete.fechaFinal.toString()))
+            .andExpect(jsonPath("$[0].paquete.precio").value(paquete.precio.toDouble()))
             .andExpect(jsonPath("$[0].agregadoEn").exists())
             .andExpect(jsonPath("$[0].comprador").doesNotExist())
         perform(get("/api/favoritos"), otroComprador).andExpect(jsonPath("$.length()").value(0))
