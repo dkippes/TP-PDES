@@ -145,4 +145,4 @@ Las ejecuciones se pueden ver en [GitHub Actions — Code Quality](https://githu
 
 Se exige **80% de cobertura total de líneas en backend y flying-service, cada uno por separado**, mediante JaCoCo. `check`, `build` y CI fallan si no se cumple. El frontend queda fuera del cálculo de cobertura por ahora, pero mantiene análisis estático, lint, tests y build.
 
-Después de subir estos archivos y completar el primer análisis, se puede exigir `Sonar Quality Gate` en la protección de `develop` para bloquear merges que no cumplan los criterios de calidad. Más detalles en [Docs/sonar.md](Docs/sonar.md)
+Después de subir estos archivos y completar el primer análisis, se puede exigir `Sonar Quality Gate` en la protección de `develop` para bloquear merges que no cumplan los criterios de calidad. Más detalles en [Docs/sonar.md](Docs/sonar.md).
