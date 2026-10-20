@@ -1,1 +1,1 @@
-export type View = 'home' | 'resultados' | 'admin' | 'login' | 'register'
+export type View = 'home' | 'resultados' | 'favoritos' | 'admin' | 'login' | 'register'

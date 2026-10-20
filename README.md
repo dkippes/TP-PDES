@@ -40,7 +40,7 @@ Aplicación y documentación:
 - [x] Back: autenticación, autorización por roles, usuarios, agencias, hoteles, paquetes e integración con vuelos.
 - [x] MER / diagrama de clases: disponibles en `Docs/`.
 - [ ] App: sección Admin. Home con ABM de usuarios y agencias implementada; las consultas de favoritos, compras, valoraciones y reportes corresponden a tareas pendientes.
-- [ ] App: sección Usuario común. Home y autenticación implementadas; faltan los flujos de búsqueda, favoritos, compra y reseñas.
+- [ ] App: sección Usuario común. Home, autenticación y favoritos implementados; faltan los flujos de búsqueda, compra y reseñas.
 - [x] Documentación (README): stack, ejecución local, pruebas y calidad de código.
 - [x] Swagger: documentación OpenAPI configurada en los servicios.
 - [x] Docker: Dockerfiles del frontend, backend y servicio de vuelos.
@@ -102,6 +102,16 @@ También se carga Horizonte Turismo, inicialmente sin agentes. La carga conserva
 Inicio muestra todos los paquetes con destino, descripción breve e imagen placeholder local, también sin iniciar sesión. `GET /api/paquetes` y `GET /api/paquetes/buscar` son públicos, con el buscador por filtros, orden y paginación (la interfaz todavía no lo consume); el listado de agencias (`GET /api/agencias`) también es público. El detalle de agencias, hoteles y paquetes y las escrituras conservan sus permisos. El administrador accede a Usuarios y Agencias mediante Administración en la navegación, e Inicio vuelve al catálogo. El ABM incluye búsqueda, alta, edición y confirmación de baja. Usuarios incluye filtro por rol, detalle y selección de agencia para agentes. La contraseña de edición es opcional. El backend rechaza la baja de registros con referencias y las operaciones sobre el propio administrador que lo dejarían sin acceso. Una agencia eliminada también elimina sus paquetes si ninguna referencia impide la operación.
 
 En `dev` también se crean hoteles y tres paquetes demo: Bariloche y Córdoba (Viajes del Sur), y Madrid (Rumbo Andino), con origen Buenos Aires. Se seleccionan vuelos futuros de ida/vuelta disponibles consultando flying-service y se crean mediante las validaciones de paquetes. Los reinicios conservan los paquetes existentes sin duplicarlos. Si flying-service no está disponible o faltan vuelos para una ruta, se omite esa carga y se reintenta al próximo arranque. Los datos de vuelos existentes deben incluir fechas futuras.
+
+## Paquetes favoritos
+
+Los compradores con sesión iniciada pueden guardar y quitar paquetes mediante el corazón de cada tarjeta. **Mis favoritos** reúne los paquetes guardados, del más reciente al más antiguo, y permite quitarlos. Los visitantes, agentes y administradores no ven estas opciones. Los favoritos pertenecen a cada cuenta y se conservan al cerrar sesión o reiniciar la aplicación.
+
+El backend expone `GET /api/favoritos`, `PUT /api/favoritos/{paqueteId}` y `DELETE /api/favoritos/{paqueteId}`, disponibles únicamente para COMPRADOR. Agregar o quitar repetidamente no duplica registros ni falla por un favorito ya ausente. La lista muestra los datos actuales del paquete; guardar no reserva vuelos ni congela precios.
+
+Flyway crea la tabla `favorito` mediante `V5__create_favorito.sql`. Eliminar un paquete, incluso por baja de su agencia, limpia sus referencias de favoritos. Eliminar un comprador o cambiarle el rol limpia sus favoritos; las restricciones existentes por compras o valoraciones siguen aplicándose.
+
+La interfaz contempla carga, errores, reintentos y lista vacía. Se reutilizan el transporte autenticado, la renovación de sesión y las tarjetas del catálogo. Las pruebas de contrato están en `front/tests/favoritos.test.mjs`; las de comportamiento, aislamiento entre compradores, permisos y bajas están en `backend/.../favorito/FavoritoControllerTest.kt`.
 
 ## Tests Gherkin del frontend
 

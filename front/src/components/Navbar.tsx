@@ -17,6 +17,7 @@ export function Navbar({ view, onNavigate, user, onLogout, busy }: NavbarProps) 
         <button className="text-xl font-bold text-sky-700" type="button" onClick={() => onNavigate('home')}>AterrizAR</button>
         <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
           <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'home' ? 'page' : undefined} onClick={() => onNavigate('home')}>Inicio</button>
+          {user?.role === 'COMPRADOR' && <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'favoritos' ? 'page' : undefined} onClick={() => onNavigate('favoritos')} disabled={busy}>Mis favoritos</button>}
           {user?.role === 'ADMINISTRADOR' && <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'admin' ? 'page' : undefined} onClick={() => onNavigate('admin')} disabled={busy}>Administración</button>}
           <SessionActions user={user} busy={busy} onLogin={() => onNavigate('login')} onRegister={() => onNavigate('register')} onLogout={onLogout} />
         </div>

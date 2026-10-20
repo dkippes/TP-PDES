@@ -1,14 +1,16 @@
 import type { PaqueteResponseDTO } from '../../types/paquete'
-import { PaqueteCard } from './PaqueteCard'
+import type { FavoritosControls } from '../../types/favorito'
+import { PaquetesGrid } from './PaquetesGrid'
 
 type PaquetesListProps = {
   paquetes: PaqueteResponseDTO[]
   loading: boolean
   error: string
   onRetry: () => void
+  favoritos?: FavoritosControls
 }
 
-export function PaquetesList({ paquetes, loading, error, onRetry }: Readonly<PaquetesListProps>) {
+export function PaquetesList({ paquetes, loading, error, onRetry, favoritos }: Readonly<PaquetesListProps>) {
   if (loading) return <p role="status" className="py-16 text-center text-slate-500">Cargando paquetes...</p>
   if (error) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
     <p role="alert" className="text-sm text-red-700">{error}</p>
@@ -16,7 +18,5 @@ export function PaquetesList({ paquetes, loading, error, onRetry }: Readonly<Paq
   </div>
   if (paquetes.length === 0) return <p className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500">Todavía no hay paquetes disponibles.</p>
 
-  return <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {paquetes.map((paquete) => <PaqueteCard key={paquete.id} paquete={paquete} />)}
-  </div>
+  return <PaquetesGrid paquetes={paquetes} favoritos={favoritos} />
 }

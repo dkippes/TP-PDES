@@ -1,10 +1,19 @@
 import placeholder from '../../assets/paquete-placeholder.svg'
 import type { PaqueteResponseDTO } from '../../types/paquete'
+import { FavoritoButton } from './FavoritoButton'
 import { formatPrecio, formatRango } from './format'
 
-export function PaqueteCard({ paquete }: { paquete: PaqueteResponseDTO }) {
+type PaqueteCardProps = {
+  paquete: PaqueteResponseDTO
+  favorito?: { guardado: boolean; disabled: boolean; onToggle: () => void }
+}
+
+export function PaqueteCard({ paquete, favorito }: PaqueteCardProps) {
   return <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <img src={placeholder} alt="Ilustración de viaje" className="aspect-[5/3] w-full object-cover" loading="lazy" />
+    <div className="relative">
+      <img src={placeholder} alt="Ilustración de viaje" className="aspect-[5/3] w-full object-cover" loading="lazy" />
+      {favorito && <FavoritoButton destino={paquete.destino} {...favorito} />}
+    </div>
     <div className="flex flex-1 flex-col p-6">
       <h2 className="text-xl font-bold text-slate-900">{paquete.destino} <span className="text-sm font-normal text-slate-500">{paquete.hotel.pais}</span></h2>
       <p className="mt-1 text-sm font-medium text-sky-700">{formatRango(paquete.fechaInicial, paquete.fechaFinal)}</p>
