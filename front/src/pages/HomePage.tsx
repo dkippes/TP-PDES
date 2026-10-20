@@ -1,17 +1,27 @@
 import type { PaquetesApi } from '../api/paquetes'
-import { GuestInvitation } from '../components/home/GuestInvitation'
+import { GuestInvitation, type GuestInvitationProps } from '../components/home/GuestInvitation'
+import { FavoritosStatus } from '../components/paquetes/FavoritosStatus'
 import { PaquetesCatalog } from '../components/paquetes/PaquetesCatalog'
+import { PaquetesSearchBar } from '../components/paquetes/PaquetesSearchBar'
+import { usePaquetesCatalogo } from '../hooks/usePaquetesCatalogo'
+import type { FavoritosControls } from '../types/favorito'
+import type { PaqueteBusquedaDTO } from '../types/paquete'
 
 type HomePageProps = {
   api: PaquetesApi
-  isAuthenticated: boolean
-  onRegister: () => void
-  onLogin: () => void
+  onSearch: (filtros: PaqueteBusquedaDTO) => void
+  /** Shown to visitors only. */
+  invitacion?: GuestInvitationProps
+  /** Present for buyers, who can save packages as favorites. */
+  favoritos?: FavoritosControls
 }
 
-export function HomePage({ api, isAuthenticated, onRegister, onLogin }: HomePageProps) {
+export function HomePage({ api, onSearch, invitacion, favoritos }: Readonly<HomePageProps>) {
+  const { data, loading, error, reload, sugerencias } = usePaquetesCatalogo(api)
   return <div className="space-y-8">
-    {!isAuthenticated && <GuestInvitation onRegister={onRegister} onLogin={onLogin} />}
-    <PaquetesCatalog api={api} />
+    <PaquetesSearchBar sugerencias={sugerencias} onSearch={onSearch} />
+    {invitacion && <GuestInvitation {...invitacion} />}
+    {favoritos && <FavoritosStatus favoritos={favoritos} />}
+    <PaquetesCatalog paquetes={data} loading={loading} error={error} onRetry={reload} favoritos={favoritos} />
   </div>
 }

@@ -1,18 +1,10 @@
 package com.aterrizAR.backend.favorito
 
 import com.aterrizAR.backend.model.Favorito
+import com.aterrizAR.backend.model.Paquete
 import java.time.Instant
 
-data class FavoritoResponseDTO(val paquete: PaqueteFavoritoDTO, val agregadoEn: Instant)
+/** `paquete` keeps the same shape as the catalog (`GET /api/paquetes`) so clients render both with one model. */
+data class FavoritoResponseDTO(val paquete: Paquete, val agregadoEn: Instant)
 
-data class PaqueteFavoritoDTO(val id: Long, val origen: String, val destino: String, val hotel: HotelFavoritoDTO)
-
-data class HotelFavoritoDTO(val nombre: String)
-
-fun Favorito.toDTO() = FavoritoResponseDTO(
-    paquete = PaqueteFavoritoDTO(
-        id = requireNotNull(paquete.id), origen = paquete.origen, destino = paquete.destino,
-        hotel = HotelFavoritoDTO(paquete.hotel.nombre),
-    ),
-    agregadoEn = agregadoEn,
-)
+fun Favorito.toDTO() = FavoritoResponseDTO(paquete = paquete, agregadoEn = agregadoEn)
