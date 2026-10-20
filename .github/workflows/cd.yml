@@ -55,8 +55,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           SHA: ${{ steps.version.outputs.ref }}
         run: |
-          existing=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/v${VERSION}" --jq '.object.sha' 2>/dev/null || true)
-          if [ -n "$existing" ]; then
+          # gh api prints the 404 JSON body to stdout, so test the exit status, not the output.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/v${VERSION}" --silent 2>/dev/null; then
             echo "::error::Tag v${VERSION} already exists; bump the release branch version."
             exit 1
           fi
