@@ -5,6 +5,8 @@ import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Hotel
 import com.aterrizAR.backend.model.Paquete
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -17,6 +19,29 @@ class PaqueteService(
     private val vueloClient: VueloClient,
 ) {
     fun findAll(): List<Paquete> = paqueteRepository.findAll()
+
+    fun buscar(filtros: PaqueteBusquedaDTO): Page<Paquete> {
+        val normalizados = filtros.copy(
+            q = filtros.q.normalizado(),
+            destino = filtros.destino.normalizado(),
+            origen = filtros.origen.normalizado(),
+        )
+        validateRango(normalizados.precioMin, normalizados.precioMax, "precioMin", "precioMax")
+        validateRango(normalizados.fechaDesde, normalizados.fechaHasta, "fechaDesde", "fechaHasta")
+        val pageable = PageRequest.of(normalizados.pagina, normalizados.tamanio, normalizados.orden.sort)
+        return paqueteRepository.findAll(PaqueteSpecifications.from(normalizados), pageable)
+    }
+
+    private fun String?.normalizado(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun <T : Comparable<T>> validateRango(desde: T?, hasta: T?, campoDesde: String, campoHasta: String) {
+        if (desde != null && hasta != null && desde > hasta) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "$campoDesde ($desde) no puede ser mayor que $campoHasta ($hasta)",
+            )
+        }
+    }
 
     fun findById(id: Long): Paquete =
         paqueteRepository.findById(id)

@@ -7,7 +7,6 @@ import org.springframework.http.HttpMethod
 
 @Configuration(proxyBeanMethods = false)
 class CatalogEndpointRules {
-    @Bean fun agenciaListRule() = EndpointRoleRule(HttpMethod.GET, "/api/agencias", Roles.supported)
     @Bean fun agenciaDetailRule() = EndpointRoleRule(HttpMethod.GET, "/api/agencias/{id}", Roles.supported)
     @Bean fun agenciaCreateRule() = EndpointRoleRule(HttpMethod.POST, "/api/agencias", setOf(Roles.ADMINISTRADOR))
     @Bean fun agenciaUpdateRule() = EndpointRoleRule(HttpMethod.PUT, "/api/agencias/{id}", setOf(Roles.ADMINISTRADOR, Roles.AGENTE))

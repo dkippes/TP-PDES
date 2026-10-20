@@ -67,6 +67,8 @@ class SecurityConfig(
                 HttpMethod.GET,
                 "/api/health",
                 "/api/paquetes",
+                "/api/paquetes/buscar",
+                "/api/agencias",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/v3/api-docs/**",
