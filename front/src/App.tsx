@@ -5,28 +5,28 @@ import { createPaquetesApi } from './api/paquetes'
 import { Navbar } from './components/Navbar'
 import { AppLayout } from './components/layout/AppLayout'
 import { useSession } from './hooks/useSession'
+import { useNavigation } from './hooks/useNavigation'
 import { HomePage } from './pages/HomePage'
 import { AdminHomePage } from './pages/AdminHomePage'
 import { CompradorPage } from './pages/CompradorPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResultadosPage } from './pages/ResultadosPage'
+import { PaquetePage } from './pages/PaquetePage'
 import type { View } from './types'
 import type { UsuarioResponseDTO } from './types/admin'
-import type { PaqueteBusquedaDTO } from './types/paquete'
 
 const paquetesApi = createPaquetesApi(requestJson)
-const vistasComprador = ['home', 'favoritos', 'compras', 'resultados'] as const
+const vistasComprador = ['home', 'favoritos', 'compras', 'resultados', 'paquete'] as const
 const esVistaComprador = (view: View): view is typeof vistasComprador[number] => (vistasComprador as readonly View[]).includes(view)
 
 function App() {
-  const [view, setView] = useState<View>('home')
-  const [busqueda, setBusqueda] = useState<PaqueteBusquedaDTO>({})
+  const { view, busqueda, paqueteId, navigate: setView, search: handleSearch, changeSearch: setBusqueda, openPackage, backToList } = useNavigation()
   const [message, setMessage] = useState('')
   const handleSessionEnded = useCallback((notice: string) => {
     setMessage(notice)
     setView('login')
-  }, [])
+  }, [setView])
   const { session, restoring, loggingOut, acceptSession, renewSession, expireSession, updateCurrentUser, logout } = useSession({
     onMessage: setMessage, onSessionEnded: handleSessionEnded,
   })
@@ -35,11 +35,6 @@ function App() {
     acceptSession(authenticated)
     setMessage('')
     setView('home')
-  }
-  const handleSearch = (filtros: PaqueteBusquedaDTO) => {
-    setBusqueda(filtros)
-    setView('resultados')
-    window.scrollTo(0, 0)
   }
   const handleRegistered = () => {
     setMessage('Cuenta creada. Iniciá sesión para continuar.')
@@ -60,9 +55,10 @@ function App() {
   return <AppLayout message={message} restoring={restoring} navigation={
     <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
   }>
-    {comprador && session && esVistaComprador(currentView) && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} busqueda={busqueda} onBusquedaChange={setBusqueda} onSearch={handleSearch} onHome={() => setView('home')} onCompras={() => setView('compras')} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
-    {!comprador && currentView === 'home' && <HomePage api={paquetesApi} onSearch={handleSearch} invitacion={session ? undefined : { onRegister: () => setView('register'), onLogin: () => setView('login') }} />}
-    {!comprador && currentView === 'resultados' && <ResultadosPage api={paquetesApi} filtros={busqueda} onFiltrosChange={setBusqueda} onBack={() => setView('home')} />}
+    {comprador && session && esVistaComprador(currentView) && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} paqueteId={paqueteId} onVerDetalle={openPackage} onVolverListado={backToList} busqueda={busqueda} onBusquedaChange={setBusqueda} onSearch={handleSearch} onHome={() => setView('home')} onCompras={() => setView('compras')} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
+    {!comprador && currentView === 'home' && <HomePage api={paquetesApi} onVerDetalle={openPackage} onSearch={handleSearch} invitacion={session ? undefined : { onRegister: () => setView('register'), onLogin: () => setView('login') }} />}
+    {!comprador && currentView === 'resultados' && <ResultadosPage api={paquetesApi} onVerDetalle={openPackage} filtros={busqueda} onFiltrosChange={setBusqueda} onBack={() => setView('home')} />}
+    {!comprador && currentView === 'paquete' && <PaquetePage key={paqueteId} api={paquetesApi} paqueteId={paqueteId} onBack={backToList} />}
     {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />}
     {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
     {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}

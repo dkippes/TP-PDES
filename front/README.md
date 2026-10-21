@@ -4,6 +4,10 @@
 
 Inicio muestra el catálogo completo de paquetes para visitantes y usuarios autenticados: destino, descripción breve e imagen placeholder local. Consume `GET /api/paquetes` sin JWT. Contempla carga, lista vacía y errores con reintento.
 
+Las tarjetas de Inicio, resultados y favoritos abren `/paquetes/{id}`. El detalle es público y muestra origen, destino, fechas, precio, hotel, foto y agencia; usa una imagen local si falta la foto o no carga. La URL permite compartir y recargar. Volver al listado y los botones atrás/adelante del navegador conservan los filtros, orden y página de resultados. Los compradores pueden guardar favoritos y comprar mediante los mismos flujos del catálogo.
+
+`npm run test:paquete-detalle` verifica estos comportamientos en Chrome preinstalado con APIs simuladas. Usa el runner de Node y Playwright existentes, inicia Vite en el puerto 15175 y no necesita backend. Se ejecuta por separado de `npm test` y de los seis escenarios Gherkin de autenticación.
+
 ADMINISTRADOR accede al ABM de usuarios y agencias mediante Administración en la navegación. Inicio vuelve al catálogo. Las peticiones administrativas usan el JWT en memoria; ante un 401 comparten la renovación de sesión y reintentan una vez.
 
 El transporte JSON y los errores se comparten en `src/api/http.ts`; la renovación está en `src/api/authenticated.ts`. Las operaciones de usuarios/agencias dependen de ese transporte mediante contratos separados en `src/api/admin.ts`. Los DTOs de alta y edición son distintos en `src/types/admin.ts`: crear requiere contraseña y editar permite omitirla. Los paneles coordinan estado y acciones; formularios, tabla y detalle de usuario tienen componentes propios.
