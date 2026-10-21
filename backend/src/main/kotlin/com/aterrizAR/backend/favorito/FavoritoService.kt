@@ -7,6 +7,7 @@ import com.aterrizAR.backend.paquete.PaqueteRepository
 import com.aterrizAR.backend.security.SoloComprador
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import com.aterrizAR.backend.usuario.UsuarioRepository
+import com.aterrizAR.backend.usuario.comoComprador
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -43,9 +44,5 @@ class FavoritoService(
         favoritoRepository.deleteByComprador_IdAndPaquete_Id(requireNotNull(comprador.id), paqueteId)
     }
 
-    private fun compradorActual(usuario: Usuario?): Comprador {
-        if (usuario == null) throw ResponseStatusException(HttpStatus.NOT_FOUND, "El usuario ya no existe")
-        return usuario.perfil as? Comprador
-            ?: throw ResponseStatusException(HttpStatus.FORBIDDEN, "Solo los compradores pueden gestionar favoritos")
-    }
+    private fun compradorActual(usuario: Usuario?): Comprador = usuario.comoComprador("gestionar favoritos")
 }

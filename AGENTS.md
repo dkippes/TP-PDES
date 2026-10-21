@@ -113,6 +113,12 @@ These rules apply to both Kotlin services unless a local package already establi
 - Migration `V5__create_favorito.sql` uses `ON DELETE CASCADE` for buyer and package references. Deleting packages (including through agency deletion), deleting buyers or replacing their profile clears the corresponding favorites. Existing restrictions for purchases/reviews remain in force. Matching Hibernate `@OnDelete` mappings preserve this behavior in schema-generated H2 tests.
 - Favorites store interest, use current package data and do not reserve flights or fix a price. Administrator consultation, purchases and reviews belong to separate tickets. Keep the six existing Gherkin scenarios; favorites contract tests use the existing Node runner and backend behavior/security tests use MockMvc and production-signed JWTs.
 
+## Flight sales
+
+- `POST /vuelos/venta` on the flying service sells one seat on every flight in `{ operacionId, vueloIds }`, all or nothing, and returns `{ operacionId, vueloIds, creadaEn }`. It returns 201 for a new sale, 400 for an empty list or duplicated/non-positive IDs, 404 when a flight is missing and 409 when a flight has no availability; nothing is sold on failure.
+- Availability is checked and decremented with one conditional UPDATE per flight (`VueloRepository.descontarAsiento`), in ascending ID order. Do not replace it with read-then-save: concurrent sales would oversell.
+- `operacionId` (UUID) is an idempotency key persisted by migration `V2__create_venta.sql`. Repeating it with the same flights returns the original sale with 200 and sells nothing; with different flights it returns 409, as does a concurrent request still holding the same key. Sold flights are stored by ID without a foreign key, so flight deletion is unchanged.
+
 ## Local development
 
 The repository-level development path is Docker Compose:
