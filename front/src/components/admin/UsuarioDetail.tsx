@@ -1,5 +1,5 @@
 import type { UsuarioResponseDTO } from '../../types/admin'
-import { AdminModal } from './AdminModal'
+import { Modal } from '../Modal'
 import { roleLabels, secondaryClass } from './controls'
 
 type Props = { usuario: UsuarioResponseDTO; nombreAgencia: string; onClose: () => void }
@@ -13,7 +13,7 @@ export function UsuarioDetail({ usuario, nombreAgencia, onClose }: Props) {
     ['Agencia', nombreAgencia],
   ]
 
-  return <AdminModal title="Detalle de usuario" busy={false} onClose={onClose}>
+  return <Modal title="Detalle de usuario" busy={false} onClose={onClose}>
     <dl className="space-y-4 text-sm">
       {fields.map(([label, value]) => <div key={label}>
         <dt className="font-medium text-slate-500">{label}</dt>
@@ -21,5 +21,5 @@ export function UsuarioDetail({ usuario, nombreAgencia, onClose }: Props) {
       </div>)}
     </dl>
     <button type="button" className={`${secondaryClass} mt-6`} onClick={onClose}>Cerrar</button>
-  </AdminModal>
+  </Modal>
 }
