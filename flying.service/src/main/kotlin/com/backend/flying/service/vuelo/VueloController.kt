@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -24,9 +25,16 @@ class VueloController(
     private val vueloService: VueloService,
 ) {
     @GetMapping
-    @Operation(summary = "Lista todos los vuelos")
+    @Operation(
+        summary = "Lista los vuelos",
+        description = "Sin `ids` devuelve todos los vuelos. Con `ids` devuelve solo los existentes " +
+            "(los ids inexistentes se omiten); una lista vacía devuelve una lista vacía.",
+    )
     @ApiResponse(responseCode = "200", description = "Listado de vuelos")
-    fun findAll(): List<Vuelo> = vueloService.findAll()
+    fun findAll(
+        @Parameter(description = "Ids de los vuelos a devolver, separados por coma", example = "1,2,3")
+        @RequestParam(required = false) ids: List<Long>?,
+    ): List<Vuelo> = vueloService.findAll(ids)
 
     @GetMapping("/{id}")
     @Operation(summary = "Busca un vuelo por id")

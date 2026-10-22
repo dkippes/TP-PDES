@@ -3,7 +3,7 @@ import { useUsuarioForm, type UsuarioFormOptions } from '../../hooks/admin/useUs
 import { esRol, type AgenciaResponseDTO } from '../../types/admin'
 import { FormField } from '../forms/FormField'
 import { AdminFormActions } from './AdminFormActions'
-import { AdminModal } from './AdminModal'
+import { Modal } from '../Modal'
 import { inputClass, roleLabels } from './controls'
 
 type Props = UsuarioFormOptions & { agencias: AgenciaResponseDTO[]; onClose: () => void }
@@ -13,7 +13,7 @@ export function UsuarioForm({ api, usuario, agencias, currentUserId, onSaved, on
   const rolId = useId()
   const agenciaId = useId()
 
-  return <AdminModal title={usuario ? 'Editar usuario' : 'Nuevo usuario'} busy={busy} onClose={onClose}>
+  return <Modal title={usuario ? 'Editar usuario' : 'Nuevo usuario'} busy={busy} onClose={onClose}>
     <form onSubmit={submit} className="space-y-4">
       <fieldset disabled={busy} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -39,5 +39,5 @@ export function UsuarioForm({ api, usuario, agencias, currentUserId, onSaved, on
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <AdminFormActions busy={busy} disabled={form.rol === 'AGENTE' && agencias.length === 0} onCancel={onClose} submitLabel="Guardar usuario" />
     </form>
-  </AdminModal>
+  </Modal>
 }

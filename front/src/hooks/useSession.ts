@@ -27,9 +27,10 @@ export function useSession({ onMessage, onSessionEnded }: SessionCallbacks) {
     return () => { cancelled = true }
   }, [onMessage])
 
+  // Callers navigate away before the session is cleared, so protected routes do not redirect first.
   const expireSession = useCallback(() => {
-    setSession(null)
     onSessionEnded('Tu sesión terminó. Iniciá sesión nuevamente.')
+    setSession(null)
   }, [onSessionEnded])
 
   useEffect(() => {
@@ -56,8 +57,8 @@ export function useSession({ onMessage, onSessionEnded }: SessionCallbacks) {
 
   const updateCurrentUser = useCallback((user: UsuarioAutenticado, passwordChanged: boolean) => {
     if (passwordChanged) {
-      setSession(null)
       onSessionEnded('Contraseña actualizada. Iniciá sesión nuevamente.')
+      setSession(null)
       return
     }
     setSession((current) => current && current.user.id === user.id ? {
@@ -66,18 +67,17 @@ export function useSession({ onMessage, onSessionEnded }: SessionCallbacks) {
     } : current)
   }, [onSessionEnded])
 
-  const logout = async (): Promise<boolean> => {
+  const logout = async (onLoggedOut: () => void) => {
     setLoggingOut(true)
     onMessage('')
     try {
       // Revoke the replacement cookie if a rotating refresh is already in flight.
       await restorePendingRefresh()
       await cerrarSesion()
+      onLoggedOut()
       setSession(null)
-      return true
     } catch {
       onMessage('No se pudo cerrar la sesión. Intentá nuevamente.')
-      return false
     } finally {
       setLoggingOut(false)
     }

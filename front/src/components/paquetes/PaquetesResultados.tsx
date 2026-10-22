@@ -1,3 +1,4 @@
+import type { CompraControls } from '../../types/compra'
 import { useCallback } from 'react'
 import type { PaquetesApi } from '../../api/paquetes'
 import { useRemoteData } from '../../hooks/useRemoteData'
@@ -10,11 +11,13 @@ import { PaquetesGrid } from './PaquetesGrid'
 
 type PaquetesResultadosProps = {
   api: PaquetesApi
+  onVerDetalle: (id: number) => void
   filtros: PaqueteBusquedaDTO
   agencias: AgenciaPublicaDTO[]
   onChange: (cambios: PaqueteBusquedaDTO, conservarPagina?: boolean) => void
   onClear: () => void
   favoritos?: FavoritosControls
+  compra?: CompraControls
 }
 
 const etiquetasOrden: Record<OrdenPaquete, string> = {
@@ -30,7 +33,7 @@ function resumen(loading: boolean, error: string, total: number) {
 }
 
 // Mount with a key derived from the filters: useRemoteData does not return to loading when `load` changes.
-export function PaquetesResultados({ api, filtros, agencias, onChange, onClear, favoritos }: Readonly<PaquetesResultadosProps>) {
+export function PaquetesResultados({ api, onVerDetalle, filtros, agencias, onChange, onClear, favoritos, compra }: Readonly<PaquetesResultadosProps>) {
   const load = useCallback(() => api.buscar(filtros), [api, filtros])
   const { data, loading, error, reload } = useRemoteData<PaquetesPaginaDTO>(load, sinResultados)
 
@@ -52,7 +55,7 @@ export function PaquetesResultados({ api, filtros, agencias, onChange, onClear, 
       <p className="text-slate-500">No encontramos paquetes con esos filtros.</p>
       <button type="button" onClick={onClear} className="mt-5 rounded-lg bg-sky-700 px-5 py-2.5 font-semibold text-white hover:bg-sky-800">Limpiar filtros</button>
     </div>}
-    <PaquetesGrid paquetes={data.contenido} favoritos={favoritos} className="grid gap-6 md:grid-cols-2" />
+    <PaquetesGrid paquetes={data.contenido} onVerDetalle={onVerDetalle} favoritos={favoritos} compra={compra} className="grid gap-6 md:grid-cols-2" />
     {!loading && !error && <Paginacion pagina={data.pagina} totalPaginas={data.totalPaginas} onChange={(pagina) => onChange({ pagina }, true)} />}
   </section>
 }

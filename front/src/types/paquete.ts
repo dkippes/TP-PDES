@@ -8,6 +8,12 @@ export type PaqueteResponseDTO = {
   fechaFinal: string
   hotel: { nombre: string; pais: string }
   agencia: { id: number; nombre: string }
+  /** Seats left (the lower of both flights); null when flying-service did not answer, so it is unknown. */
+  disponibilidad: number | null
+}
+
+export type PaqueteDetalleDTO = PaqueteResponseDTO & {
+  hotel: PaqueteResponseDTO['hotel'] & { foto: string }
 }
 
 export const ordenesPaquete = ['FECHA_ASC', 'FECHA_DESC', 'PRECIO_ASC', 'PRECIO_DESC', 'DESTINO_ASC'] as const

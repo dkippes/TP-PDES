@@ -1,8 +1,9 @@
 import type { JsonRequest } from './http'
-import type { AgenciaPublicaDTO, PaqueteBusquedaDTO, PaqueteResponseDTO, PaquetesPaginaDTO } from '../types/paquete'
+import type { AgenciaPublicaDTO, PaqueteBusquedaDTO, PaqueteDetalleDTO, PaqueteResponseDTO, PaquetesPaginaDTO } from '../types/paquete'
 
 export interface PaquetesApi {
   listar(): Promise<PaqueteResponseDTO[]>
+  obtener(id: number): Promise<PaqueteDetalleDTO>
   buscar(filtros: PaqueteBusquedaDTO): Promise<PaquetesPaginaDTO>
   listarAgencias(): Promise<AgenciaPublicaDTO[]>
 }
@@ -10,6 +11,7 @@ export interface PaquetesApi {
 export function createPaquetesApi(request: JsonRequest): PaquetesApi {
   return {
     listar: () => request('GET', 'paquetes'),
+    obtener: (id) => request('GET', `paquetes/${id}`),
     buscar: (filtros) => {
       const params = new URLSearchParams()
       for (const [clave, valor] of Object.entries(filtros)) {

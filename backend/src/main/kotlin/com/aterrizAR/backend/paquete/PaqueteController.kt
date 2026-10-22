@@ -1,6 +1,5 @@
 package com.aterrizAR.backend.paquete
 
-import com.aterrizAR.backend.model.Paquete
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -28,8 +27,8 @@ class PaqueteController(
 ) {
     @GetMapping
     @Operation(summary = "Lista todos los paquetes", description = "Catálogo público, disponible sin iniciar sesión")
-    @ApiResponse(responseCode = "200", description = "Listado completo de paquetes")
-    fun findAll(): List<Paquete> = paqueteService.findAll()
+    @ApiResponse(responseCode = "200", description = "Listado completo de paquetes, con sus lugares disponibles")
+    fun findAll(): List<PaqueteDTO> = paqueteService.findAll()
 
     @GetMapping("/buscar")
     @Operation(
@@ -38,25 +37,22 @@ class PaqueteController(
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Página de paquetes que cumplen los filtros"),
+            ApiResponse(responseCode = "200", description = "Página de paquetes que cumplen los filtros, con sus lugares disponibles"),
             ApiResponse(responseCode = "400", description = "Parámetros inválidos o rangos invertidos (precioMin > precioMax, fechaDesde > fechaHasta)"),
         ],
     )
     fun buscar(@Valid @ParameterObject @ModelAttribute filtros: PaqueteBusquedaDTO): PaquetesPaginaDTO =
-        paqueteService.buscar(filtros).toDTO()
+        paqueteService.buscar(filtros)
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene un paquete por id")
-    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Obtiene un paquete por id", description = "Detalle público, disponible sin iniciar sesión")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Paquete encontrado"),
-            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-            ApiResponse(responseCode = "403", description = "El rol no permite esta operación"),
+            ApiResponse(responseCode = "200", description = "Paquete encontrado, con sus lugares disponibles"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
         ],
     )
-    fun findById(@PathVariable id: Long): Paquete = paqueteService.findById(id)
+    fun findById(@PathVariable id: Long): PaqueteDTO = paqueteService.obtener(id)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -71,7 +67,7 @@ class PaqueteController(
             ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
         ],
     )
-    fun create(@Valid @RequestBody request: PaqueteRequest): Paquete = paqueteService.create(request)
+    fun create(@Valid @RequestBody request: PaqueteRequest): PaqueteDTO = paqueteService.create(request)
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualiza un paquete existente")
@@ -86,7 +82,7 @@ class PaqueteController(
             ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
         ],
     )
-    fun update(@PathVariable id: Long, @Valid @RequestBody request: PaqueteRequest): Paquete =
+    fun update(@PathVariable id: Long, @Valid @RequestBody request: PaqueteRequest): PaqueteDTO =
         paqueteService.update(id, request)
 
     @DeleteMapping("/{id}")

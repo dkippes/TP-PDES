@@ -4,8 +4,10 @@ import com.aterrizAR.backend.agencia.AgenciaRepository
 import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Hotel
+import com.aterrizAR.backend.model.Paquete
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -83,10 +85,12 @@ class PaqueteServiceTest {
     fun `create persists a paquete when both flights have availability`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 5)
 
         val created = paqueteService.create(sampleRequest())
 
         assertEquals("Bariloche", created.destino)
+        assertEquals(5, created.disponibilidad)
         assertEquals(1, paqueteRepository.count())
     }
 
@@ -138,6 +142,7 @@ class PaqueteServiceTest {
     fun `create throws 409 when the agencia already has an identical paquete`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 5)
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
         paqueteService.create(sampleRequest())
@@ -158,13 +163,16 @@ class PaqueteServiceTest {
     fun `update overwrites the existing paquete`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 5)
         expectVueloCheck(1, 10)
         expectVueloCheck(3, 8)
+        mockServer.expectDisponibilidades(1L to 10, 3L to 8)
         val created = paqueteService.create(sampleRequest())
 
-        val updated = paqueteService.update(created.id!!, sampleRequest(vueloVueltaId = 3))
+        val updated = paqueteService.update(created.id, sampleRequest(vueloVueltaId = 3))
 
         assertEquals(3, updated.vueloVueltaId)
+        assertEquals(8, updated.disponibilidad)
         assertEquals(1, paqueteRepository.count())
     }
 
@@ -177,9 +185,10 @@ class PaqueteServiceTest {
     fun `delete removes the paquete`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 5)
         val created = paqueteService.create(sampleRequest())
 
-        paqueteService.delete(created.id!!)
+        paqueteService.delete(created.id)
 
         assertEquals(0, paqueteRepository.count())
     }
@@ -187,5 +196,67 @@ class PaqueteServiceTest {
     @Test
     fun `delete throws 404 when the paquete does not exist`() {
         assertThrows(ResponseStatusException::class.java) { paqueteService.delete(999L) }
+    }
+
+    private fun paqueteGuardado(vueloIdaId: Long, vueloVueltaId: Long) = paqueteRepository.save(Paquete(
+        precio = 1500f, vueloIdaId = vueloIdaId, vueloVueltaId = vueloVueltaId, hotel = hotel, agencia = agencia,
+        origen = "Buenos Aires", destino = "Bariloche",
+        fechaInicial = LocalDate.of(2026, 12, 1), fechaFinal = LocalDate.of(2026, 12, 10),
+    ))
+
+    @Test
+    fun `availability is the lower of both flights using one call for every package`() {
+        val primero = paqueteGuardado(1, 2)
+        val segundo = paqueteGuardado(3, 4)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 7, 3L to 2, 4L to 9)
+
+        val resultado = paqueteService.conDisponibilidad(listOf(primero, segundo))
+
+        assertEquals(listOf(primero.id, segundo.id), resultado.map { it.id })
+        assertEquals(listOf(7, 2), resultado.map { it.disponibilidad })
+        mockServer.verify()
+    }
+
+    @Test
+    fun `availability is zero when one of the flights is missing from the answer`() {
+        val paquete = paqueteGuardado(1, 2)
+        mockServer.expectDisponibilidades(1L to 10, consultados = listOf(1, 2))
+
+        assertEquals(0, paqueteService.conDisponibilidad(listOf(paquete)).single().disponibilidad)
+        mockServer.verify()
+    }
+
+    @Test
+    fun `availability is unknown when flying-service fails`() {
+        val paquete = paqueteGuardado(1, 2)
+        mockServer.expectDisponibilidadesFallidas(1, 2)
+
+        assertNull(paqueteService.conDisponibilidad(listOf(paquete)).single().disponibilidad)
+        mockServer.verify()
+    }
+
+    @Test
+    fun `no packages means no call to flying-service`() {
+        assertEquals(emptyList<PaqueteDTO>(), paqueteService.conDisponibilidad(emptyList()))
+        mockServer.verify()
+    }
+
+    @Test
+    fun `findAll obtener and buscar all carry the availability`() {
+        val paquete = paqueteGuardado(1, 2)
+        repeat(3) { mockServer.expectDisponibilidades(1L to 4, 2L to 6) }
+
+        assertEquals(4, paqueteService.findAll().single().disponibilidad)
+        assertEquals(4, paqueteService.obtener(paquete.id!!).disponibilidad)
+        val pagina = paqueteService.buscar(PaqueteBusquedaDTO())
+        assertEquals(1, pagina.totalElementos)
+        assertEquals(4, pagina.contenido.single().disponibilidad)
+        mockServer.verify()
+    }
+
+    @Test
+    fun `obtener throws 404 without calling flying-service when the paquete does not exist`() {
+        assertThrows(ResponseStatusException::class.java) { paqueteService.obtener(999L) }
+        mockServer.verify()
     }
 }

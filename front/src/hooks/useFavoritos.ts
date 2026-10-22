@@ -24,8 +24,14 @@ export function useFavoritos(api: FavoritosApi) {
     })
   }
 
+  /** Replaces a saved package with a fresher read of it (e.g. new availability); ignores packages that are not favorites. */
+  const actualizar = (paquete: PaqueteResponseDTO) => {
+    if (loading || error || !ids.has(paquete.id)) return
+    updateData((current) => current.map((item) => item.id === paquete.id ? paquete : item))
+  }
+
   const controls: FavoritosControls = {
     ids, disabled: loading || busy || !!error, loading, busy, error, actionError, toggle, reload,
   }
-  return { paquetes: data, controls }
+  return { paquetes: data, controls, actualizar }
 }

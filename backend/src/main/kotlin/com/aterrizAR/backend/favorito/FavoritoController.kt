@@ -31,9 +31,9 @@ import org.springframework.web.bind.annotation.RestController
 class FavoritoController(private val favoritoService: FavoritoService) {
     @GetMapping
     @Operation(summary = "Lista los favoritos propios, del más reciente al más antiguo")
-    @ApiResponse(responseCode = "200", description = "Favoritos del comprador, con los datos actuales del paquete")
+    @ApiResponse(responseCode = "200", description = "Favoritos del comprador, con los datos actuales del paquete y sus lugares disponibles")
     fun listar(@Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt): List<FavoritoResponseDTO> =
-        favoritoService.listar(UsuarioAutenticado.from(jwt)).map { it.toDTO() }
+        favoritoService.listar(UsuarioAutenticado.from(jwt))
 
     @PutMapping("/{paqueteId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

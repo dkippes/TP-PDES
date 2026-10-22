@@ -68,6 +68,54 @@ class VueloControllerTest {
         mockMvc.perform(get("/vuelos/999")).andExpect(status().isNotFound)
     }
 
+    private fun createVuelo(disponibilidad: Int): Long {
+        val body = mockMvc.perform(
+            post("/vuelos").contentType(MediaType.APPLICATION_JSON).content(vueloJson(disponibilidad = disponibilidad)),
+        ).andExpect(status().isCreated).andReturn().response.contentAsString
+        return "\"id\":(\\d+)".toRegex().find(body)!!.groupValues[1].toLong()
+    }
+
+    @Test
+    fun `GET vuelos with ids returns only those flights and ignores unknown ids`() {
+        val first = createVuelo(10)
+        createVuelo(20)
+        val third = createVuelo(30)
+
+        mockMvc.perform(get("/vuelos").param("ids", "$first,$third,99999"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[?(@.id == $first)].disponibilidad").value(10))
+            .andExpect(jsonPath("$[?(@.id == $third)].disponibilidad").value(30))
+    }
+
+    @Test
+    fun `GET vuelos with only unknown ids returns an empty list`() {
+        createVuelo(10)
+
+        mockMvc.perform(get("/vuelos").param("ids", "99999"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
+    }
+
+    @Test
+    fun `GET vuelos with an empty ids list returns an empty list`() {
+        createVuelo(10)
+
+        mockMvc.perform(get("/vuelos").param("ids", ""))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
+    }
+
+    @Test
+    fun `GET vuelos without ids still returns every flight`() {
+        createVuelo(10)
+        createVuelo(20)
+
+        mockMvc.perform(get("/vuelos"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(2))
+    }
+
     @Test
     fun `full crud flow through the HTTP layer`() {
         val createResult = mockMvc.perform(

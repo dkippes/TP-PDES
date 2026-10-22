@@ -5,6 +5,7 @@ import { createPaquetesApi, requestJson } from './api-modules.mjs'
 test('public catalog requests every package without credentials or filters in the URL', async (t) => {
   const paquetes = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1, origen: 'Buenos Aires', destino: `Destino ${index + 1}`, hotel: { nombre: 'Hotel Demo', pais: 'España' },
+    disponibilidad: index % 3 === 0 ? null : index,
   }))
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(new URL(url).pathname, '/api/paquetes')
@@ -13,7 +14,11 @@ test('public catalog requests every package without credentials or filters in th
     assert.equal(options.headers.Authorization, undefined)
     return new Response(JSON.stringify(paquetes))
   })
-  assert.deepEqual(await createPaquetesApi(requestJson).listar(), paquetes)
+  const recibidos = await createPaquetesApi(requestJson).listar()
+  assert.deepEqual(recibidos, paquetes)
+  // Unknown availability (null) must reach the UI as null, not be coerced to 0 or dropped.
+  assert.equal(recibidos[0].disponibilidad, null)
+  assert.equal(recibidos[1].disponibilidad, 1)
 })
 
 test('buscar serializes filters, omits empty values and sends no credentials', async (t) => {
@@ -47,4 +52,24 @@ test('listarAgencias requests the public agency list', async (t) => {
     return new Response(JSON.stringify(agencias))
   })
   assert.deepEqual(await createPaquetesApi(requestJson).listarAgencias(), agencias)
+})
+
+test('package detail requests its own public endpoint and preserves the hotel photo', async (t) => {
+  const paquete = { id: 8, origen: 'Buenos Aires', destino: 'Madrid', hotel: { nombre: 'Hotel Sol', foto: '/sol.jpg' }, disponibilidad: 4 }
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/paquetes/8')
+    assert.equal(options.method, 'GET')
+    assert.equal(options.headers.Authorization, undefined)
+    return new Response(JSON.stringify(paquete))
+  })
+  const recibido = await createPaquetesApi(requestJson).obtener(8)
+  assert.deepEqual(recibido, paquete)
+  assert.equal(recibido.disponibilidad, 4)
+})
+
+test('package detail preserves not-found and service errors for the page', async (t) => {
+  const mock = t.mock.method(globalThis, 'fetch', async () => new Response('{}', { status: 404 }))
+  await assert.rejects(createPaquetesApi(requestJson).obtener(8), (error) => error.status === 404)
+  mock.mock.mockImplementation(async () => new Response('{}', { status: 503 }))
+  await assert.rejects(createPaquetesApi(requestJson).obtener(8), (error) => error.status === 503)
 })

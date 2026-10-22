@@ -18,9 +18,15 @@ class PaqueteService(
     private val agenciaRepository: AgenciaRepository,
     private val vueloClient: VueloClient,
 ) {
-    fun findAll(): List<Paquete> = paqueteRepository.findAll()
+    fun findAll(): List<PaqueteDTO> = conDisponibilidad(paqueteRepository.findAll())
 
-    fun buscar(filtros: PaqueteBusquedaDTO): Page<Paquete> {
+    fun buscar(filtros: PaqueteBusquedaDTO): PaquetesPaginaDTO {
+        val pagina = consultar(filtros)
+        return pagina.toDTO(conDisponibilidad(pagina.content))
+    }
+
+    /** Applies the search filters, order and pagination over the stored packages, without availability. */
+    fun consultar(filtros: PaqueteBusquedaDTO): Page<Paquete> {
         val normalizados = filtros.copy(
             q = filtros.q.normalizado(),
             destino = filtros.destino.normalizado(),
@@ -47,11 +53,26 @@ class PaqueteService(
         paqueteRepository.findById(id)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Paquete $id no encontrado") }
 
-    fun create(request: PaqueteRequest): Paquete = paqueteRepository.save(validate(request, excludeId = null))
+    fun obtener(id: Long): PaqueteDTO = conDisponibilidad(listOf(findById(id))).single()
 
-    fun update(id: Long, request: PaqueteRequest): Paquete {
+    fun create(request: PaqueteRequest): PaqueteDTO =
+        conDisponibilidad(listOf(paqueteRepository.save(validate(request, excludeId = null)))).single()
+
+    fun update(id: Long, request: PaqueteRequest): PaqueteDTO {
         findById(id)
-        return paqueteRepository.save(validate(request, excludeId = id))
+        return conDisponibilidad(listOf(paqueteRepository.save(validate(request, excludeId = id)))).single()
+    }
+
+    /**
+     * The packages as catalog DTOs, in the same order, with one flying-service call for the whole list.
+     * Seats left are the lower availability of the outbound and return flights: null when flying-service did not
+     * answer (unknown) and 0 when one of the package's flights is missing from its answer.
+     */
+    fun conDisponibilidad(paquetes: List<Paquete>): List<PaqueteDTO> {
+        val porVuelo = vueloClient.findDisponibilidades(paquetes.flatMap { listOf(it.vueloIdaId, it.vueloVueltaId) })
+        return paquetes.map { paquete ->
+            paquete.toDTO(porVuelo?.let { minOf(it[paquete.vueloIdaId] ?: 0, it[paquete.vueloVueltaId] ?: 0) })
+        }
     }
 
     fun delete(id: Long) {
