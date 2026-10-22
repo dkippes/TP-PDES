@@ -13,6 +13,8 @@ import com.aterrizAR.backend.model.Paquete
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.paquete.PaqueteRepository
+import com.aterrizAR.backend.paquete.expectDisponibilidades
+import com.aterrizAR.backend.paquete.expectDisponibilidadesFallidas
 import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,6 +27,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -32,6 +35,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.web.client.RestTemplate
 import java.time.LocalDate
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -50,6 +54,9 @@ class FavoritoControllerTest {
     @Autowired lateinit var agenciaRepository: AgenciaRepository
     @Autowired lateinit var refreshTokenRepository: RefreshTokenRepository
     @Autowired lateinit var jdbc: JdbcTemplate
+    @Autowired lateinit var restTemplate: RestTemplate
+
+    private lateinit var mockServer: MockRestServiceServer
 
     private lateinit var comprador: Usuario
     private lateinit var otroComprador: Usuario
@@ -60,6 +67,7 @@ class FavoritoControllerTest {
 
     @BeforeEach
     fun setUp() {
+        mockServer = MockRestServiceServer.bindTo(restTemplate).build()
         comprador = usuario("favorito-buyer@example.com", Comprador())
         otroComprador = usuario("favorito-other@example.com", Comprador())
         admin = usuario("favorito-admin@example.com", Administrador())
@@ -97,9 +105,11 @@ class FavoritoControllerTest {
         repeat(2) { perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent) }
         assertEquals(1, favoritoRepository.count())
 
+        mockServer.expectDisponibilidades(1L to 9, 2L to 3)
         perform(get("/api/favoritos"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].paquete.disponibilidad").value(3))
             .andExpect(jsonPath("$[0].paquete.id").value(paquete.id!!))
             .andExpect(jsonPath("$[0].paquete.hotel.nombre").value(hotel.nombre))
             // Same package shape as the catalog, which the shared package card renders.
@@ -125,9 +135,22 @@ class FavoritoControllerTest {
         perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent)
         jdbc.update("UPDATE paquete SET destino = ? WHERE id = ?", "Córdoba", paquete.id)
 
+        mockServer.expectDisponibilidades(1L to 9, 2L to 3)
         perform(get("/api/favoritos"))
             .andExpect(jsonPath("$[0].paquete.id").value(segundo.id!!))
             .andExpect(jsonPath("$[1].paquete.destino").value("Córdoba"))
+    }
+
+    @Test
+    fun `favorites report null availability when flying-service fails`() {
+        perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent)
+
+        mockServer.expectDisponibilidadesFallidas(1, 2)
+        perform(get("/api/favoritos"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].paquete.id").value(paquete.id!!))
+            .andExpect(jsonPath("$[0].paquete.disponibilidad").hasJsonPath())
+            .andExpect(jsonPath("$[0].paquete.disponibilidad").value(null as Any?))
     }
 
     @Test
@@ -163,6 +186,7 @@ class FavoritoControllerTest {
         perform(delete("/api/paquetes/${paquete.id}"), admin).andExpect(status().isNoContent)
 
         assertEquals(1, favoritoRepository.count())
+        mockServer.expectDisponibilidades(1L to 9, 2L to 3)
         perform(get("/api/favoritos")).andExpect(jsonPath("$[0].paquete.id").value(segundo.id!!))
     }
 

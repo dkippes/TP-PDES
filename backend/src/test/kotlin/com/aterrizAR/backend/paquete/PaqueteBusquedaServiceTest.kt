@@ -83,11 +83,11 @@ class PaqueteBusquedaServiceTest {
         ),
     )
 
-    private fun ids(filtros: PaqueteBusquedaDTO) = paqueteService.buscar(filtros).content.map { it.id }
+    private fun ids(filtros: PaqueteBusquedaDTO) = paqueteService.consultar(filtros).content.map { it.id }
 
     @Test
     fun `without filters returns every paquete`() {
-        val page = paqueteService.buscar(PaqueteBusquedaDTO())
+        val page = paqueteService.consultar(PaqueteBusquedaDTO())
 
         assertEquals(4, page.totalElements)
         assertEquals(4, page.content.size)
@@ -185,7 +185,7 @@ class PaqueteBusquedaServiceTest {
 
     @Test
     fun `q without matches returns an empty page`() {
-        val page = paqueteService.buscar(PaqueteBusquedaDTO(q = "inexistente"))
+        val page = paqueteService.consultar(PaqueteBusquedaDTO(q = "inexistente"))
 
         assertEquals(0, page.totalElements)
         assertEquals(emptyList<Paquete>(), page.content)
@@ -205,7 +205,7 @@ class PaqueteBusquedaServiceTest {
 
     @Test
     fun `blank texts are ignored`() {
-        assertEquals(4, paqueteService.buscar(PaqueteBusquedaDTO(q = "   ", destino = "", origen = " ")).totalElements)
+        assertEquals(4, paqueteService.consultar(PaqueteBusquedaDTO(q = "   ", destino = "", origen = " ")).totalElements)
     }
 
     @Test
@@ -249,8 +249,8 @@ class PaqueteBusquedaServiceTest {
 
     @Test
     fun `paginates with totals and a partial last page`() {
-        val first = paqueteService.buscar(PaqueteBusquedaDTO(tamanio = 3, pagina = 0))
-        val last = paqueteService.buscar(PaqueteBusquedaDTO(tamanio = 3, pagina = 1))
+        val first = paqueteService.consultar(PaqueteBusquedaDTO(tamanio = 3, pagina = 0))
+        val last = paqueteService.consultar(PaqueteBusquedaDTO(tamanio = 3, pagina = 1))
 
         assertEquals(3, first.content.size)
         assertEquals(4, first.totalElements)
@@ -261,7 +261,7 @@ class PaqueteBusquedaServiceTest {
 
     @Test
     fun `page beyond the last one is empty but keeps totals`() {
-        val page = paqueteService.buscar(PaqueteBusquedaDTO(tamanio = 3, pagina = 5))
+        val page = paqueteService.consultar(PaqueteBusquedaDTO(tamanio = 3, pagina = 5))
 
         assertEquals(emptyList<Paquete>(), page.content)
         assertEquals(4, page.totalElements)
@@ -271,7 +271,7 @@ class PaqueteBusquedaServiceTest {
     @Test
     fun `inverted precio range is rejected with 400`() {
         val exception = assertThrows(ResponseStatusException::class.java) {
-            paqueteService.buscar(PaqueteBusquedaDTO(precioMin = 3000f, precioMax = 100f))
+            paqueteService.consultar(PaqueteBusquedaDTO(precioMin = 3000f, precioMax = 100f))
         }
         assertEquals(400, exception.statusCode.value())
     }
@@ -279,7 +279,7 @@ class PaqueteBusquedaServiceTest {
     @Test
     fun `inverted fecha range is rejected with 400`() {
         val exception = assertThrows(ResponseStatusException::class.java) {
-            paqueteService.buscar(
+            paqueteService.consultar(
                 PaqueteBusquedaDTO(fechaDesde = LocalDate.of(2027, 1, 1), fechaHasta = LocalDate.of(2026, 1, 1)),
             )
         }

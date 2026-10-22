@@ -12,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.web.client.RestTemplate
 import java.time.LocalDate
 
 @SpringBootTest
@@ -35,10 +37,15 @@ class PaqueteBusquedaControllerTest {
     @Autowired
     lateinit var agenciaRepository: AgenciaRepository
 
+    @Autowired
+    lateinit var restTemplate: RestTemplate
+
+    private lateinit var mockServer: MockRestServiceServer
     private lateinit var agencia: Agencia
 
     @BeforeEach
     fun setUp() {
+        mockServer = MockRestServiceServer.bindTo(restTemplate).build()
         val hotel = hotelRepository.save(Hotel(nombre = "Sheraton", pais = "Argentina", foto = "sheraton.jpg"))
         agencia = agenciaRepository.save(Agencia(nombre = "Agencia Sur", email = "busqueda-ctrl@test.com"))
         listOf(
@@ -71,11 +78,17 @@ class PaqueteBusquedaControllerTest {
 
     @Test
     fun `GET buscar is public and returns the page shape with defaults`() {
+        mockServer.expectDisponibilidades(1L to 10, 2L to 4, 3L to 6, 4L to 6, 5L to 0, 6L to 20)
+
         mockMvc.perform(get("/api/paquetes/buscar"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.contenido.length()").value(3))
             .andExpect(jsonPath("$.contenido[0].destino").value("Cordoba"))
             .andExpect(jsonPath("$.contenido[0].hotel.nombre").value("Sheraton"))
+            .andExpect(jsonPath("$.contenido[0].disponibilidad").value(0))
+            .andExpect(jsonPath("$.contenido[1].destino").value("Bariloche"))
+            .andExpect(jsonPath("$.contenido[1].disponibilidad").value(4))
+            .andExpect(jsonPath("$.contenido[2].disponibilidad").value(6))
             .andExpect(jsonPath("$.pagina").value(0))
             .andExpect(jsonPath("$.tamanio").value(12))
             .andExpect(jsonPath("$.totalElementos").value(3))
@@ -84,6 +97,8 @@ class PaqueteBusquedaControllerTest {
 
     @Test
     fun `GET buscar binds filters, order and pagination`() {
+        mockServer.expectDisponibilidades(1L to 10, 2L to 4)
+
         mockMvc.perform(
             get("/api/paquetes/buscar")
                 .param("q", "sheraton")
@@ -99,6 +114,7 @@ class PaqueteBusquedaControllerTest {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.contenido.length()").value(1))
             .andExpect(jsonPath("$.contenido[0].destino").value("Bariloche"))
+            .andExpect(jsonPath("$.contenido[0].disponibilidad").value(4))
             .andExpect(jsonPath("$.pagina").value(1))
             .andExpect(jsonPath("$.tamanio").value(1))
             .andExpect(jsonPath("$.totalElementos").value(2))
@@ -132,7 +148,20 @@ class PaqueteBusquedaControllerTest {
     }
 
     @Test
+    fun `GET buscar reports null availability when flying-service fails`() {
+        mockServer.expectDisponibilidadesFallidas(1, 2, 3, 4, 5, 6)
+
+        mockMvc.perform(get("/api/paquetes/buscar"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.contenido.length()").value(3))
+            .andExpect(jsonPath("$.contenido[0].disponibilidad").hasJsonPath())
+            .andExpect(jsonPath("$.contenido[0].disponibilidad").value(null as Any?))
+    }
+
+    @Test
     fun `GET paquetes still returns a plain array`() {
+        mockServer.expectDisponibilidades(1L to 10, 2L to 4, 3L to 6, 4L to 6, 5L to 0, 6L to 20)
+
         mockMvc.perform(get("/api/paquetes"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$").isArray)

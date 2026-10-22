@@ -4,6 +4,7 @@ import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Favorito
 import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.paquete.PaqueteRepository
+import com.aterrizAR.backend.paquete.PaqueteService
 import com.aterrizAR.backend.security.SoloComprador
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import com.aterrizAR.backend.usuario.UsuarioRepository
@@ -21,10 +22,13 @@ class FavoritoService(
     private val favoritoRepository: FavoritoRepository,
     private val usuarioRepository: UsuarioRepository,
     private val paqueteRepository: PaqueteRepository,
+    private val paqueteService: PaqueteService,
 ) {
-    fun listar(autenticado: UsuarioAutenticado): List<Favorito> {
+    fun listar(autenticado: UsuarioAutenticado): List<FavoritoResponseDTO> {
         val comprador = compradorActual(usuarioRepository.findByIdOrNull(autenticado.id))
-        return favoritoRepository.findAllDelComprador(requireNotNull(comprador.id))
+        val favoritos = favoritoRepository.findAllDelComprador(requireNotNull(comprador.id))
+        val paquetes = paqueteService.conDisponibilidad(favoritos.map { it.paquete })
+        return favoritos.zip(paquetes) { favorito, paquete -> favorito.toDTO(paquete) }
     }
 
     @Transactional

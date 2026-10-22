@@ -26,6 +26,23 @@ class VueloClient(
             null
         }
 
+    /**
+     * Availability per flight id in a single request. Flights unknown to flying-service are absent from the map;
+     * null means the service did not answer, so callers can tell "unknown" apart from "missing".
+     */
+    fun findDisponibilidades(vueloIds: Collection<Long>): Map<Long, Int>? {
+        val ids = vueloIds.distinct().sorted()
+        if (ids.isEmpty()) return emptyMap()
+        return try {
+            restTemplate.getForObject("$flyingServiceUrl/vuelos?ids=${ids.joinToString(",")}", Array<VueloResponse>::class.java)
+                ?.mapNotNull { vuelo -> vuelo.id?.let { it to vuelo.disponibilidad } }
+                ?.toMap()
+                .orEmpty()
+        } catch (e: RestClientException) {
+            null
+        }
+    }
+
     /** Sells one seat per flight, all or nothing. Repeating [operacionId] with the same flights sells nothing new. */
     fun vender(operacionId: UUID, vueloIds: List<Long>): ResultadoVentaVuelos =
         try {
