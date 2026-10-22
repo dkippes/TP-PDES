@@ -48,3 +48,21 @@ test('listarAgencias requests the public agency list', async (t) => {
   })
   assert.deepEqual(await createPaquetesApi(requestJson).listarAgencias(), agencias)
 })
+
+test('package detail requests its own public endpoint and preserves the hotel photo', async (t) => {
+  const paquete = { id: 8, origen: 'Buenos Aires', destino: 'Madrid', hotel: { nombre: 'Hotel Sol', foto: '/sol.jpg' } }
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/paquetes/8')
+    assert.equal(options.method, 'GET')
+    assert.equal(options.headers.Authorization, undefined)
+    return new Response(JSON.stringify(paquete))
+  })
+  assert.deepEqual(await createPaquetesApi(requestJson).obtener(8), paquete)
+})
+
+test('package detail preserves not-found and service errors for the page', async (t) => {
+  const mock = t.mock.method(globalThis, 'fetch', async () => new Response('{}', { status: 404 }))
+  await assert.rejects(createPaquetesApi(requestJson).obtener(8), (error) => error.status === 404)
+  mock.mock.mockImplementation(async () => new Response('{}', { status: 503 }))
+  await assert.rejects(createPaquetesApi(requestJson).obtener(8), (error) => error.status === 503)
+})

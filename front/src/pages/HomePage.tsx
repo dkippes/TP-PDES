@@ -10,6 +10,7 @@ import type { PaqueteBusquedaDTO } from '../types/paquete'
 
 type HomePageProps = {
   api: PaquetesApi
+  onVerDetalle: (id: number) => void
   onSearch: (filtros: PaqueteBusquedaDTO) => void
   /** Shown to visitors only. */
   invitacion?: GuestInvitationProps
@@ -19,12 +20,12 @@ type HomePageProps = {
   compra?: CompraControls
 }
 
-export function HomePage({ api, onSearch, invitacion, favoritos, compra }: Readonly<HomePageProps>) {
+export function HomePage({ api, onVerDetalle, onSearch, invitacion, favoritos, compra }: Readonly<HomePageProps>) {
   const { data, loading, error, reload, sugerencias } = usePaquetesCatalogo(api)
   return <div className="space-y-8">
     <PaquetesSearchBar sugerencias={sugerencias} onSearch={onSearch} />
     {invitacion && <GuestInvitation {...invitacion} />}
     {favoritos && <FavoritosStatus favoritos={favoritos} />}
-    <PaquetesCatalog paquetes={data} loading={loading} error={error} onRetry={reload} favoritos={favoritos} compra={compra} />
+    <PaquetesCatalog paquetes={data} onVerDetalle={onVerDetalle} loading={loading} error={error} onRetry={reload} favoritos={favoritos} compra={compra} />
   </div>
 }

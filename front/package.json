@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "test:paquete-detalle": "node --test tests/paquete-detalle.browser.mjs",
     "test:bdd": "tsc -p tsconfig.bdd.json && bddgen --config playwright.bdd.config.ts && playwright test --config playwright.bdd.config.ts",
     "test:bdd:debug": "tsc -p tsconfig.bdd.json && bddgen --config playwright.bdd.config.ts && playwright test --config playwright.bdd.config.ts --debug",
     "preview": "vite preview"

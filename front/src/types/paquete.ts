@@ -10,6 +10,10 @@ export type PaqueteResponseDTO = {
   agencia: { id: number; nombre: string }
 }
 
+export type PaqueteDetalleDTO = PaqueteResponseDTO & {
+  hotel: PaqueteResponseDTO['hotel'] & { foto: string }
+}
+
 export const ordenesPaquete = ['FECHA_ASC', 'FECHA_DESC', 'PRECIO_ASC', 'PRECIO_DESC', 'DESTINO_ASC'] as const
 export type OrdenPaquete = (typeof ordenesPaquete)[number]
 

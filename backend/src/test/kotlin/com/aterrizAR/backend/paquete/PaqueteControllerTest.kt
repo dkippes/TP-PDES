@@ -5,6 +5,7 @@ import com.aterrizAR.backend.auth.JwtService
 import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Hotel
+import com.aterrizAR.backend.model.Paquete
 import com.aterrizAR.backend.security.authenticatedAs
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.client.RestTemplate
+import java.time.LocalDate
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -118,7 +120,28 @@ class PaqueteControllerTest {
 
     @Test
     fun `GET paquetes id returns 404 when missing`() {
-        perform(get("/api/paquetes/999")).andExpect(status().isNotFound)
+        mockMvc.perform(get("/api/paquetes/999")).andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `GET paquete detail returns its data without authentication or flight calls`() {
+        val paquete = paqueteRepository.save(Paquete(
+            precio = 1500f, vueloIdaId = 1, vueloVueltaId = 2, hotel = hotel, agencia = agencia,
+            origen = "Buenos Aires", destino = "Bariloche",
+            fechaInicial = LocalDate.of(2026, 12, 1), fechaFinal = LocalDate.of(2026, 12, 10),
+        ))
+
+        mockMvc.perform(get("/api/paquetes/${paquete.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.origen").value("Buenos Aires"))
+            .andExpect(jsonPath("$.destino").value("Bariloche"))
+            .andExpect(jsonPath("$.precio").value(1500.0))
+            .andExpect(jsonPath("$.fechaInicial").value("2026-12-01"))
+            .andExpect(jsonPath("$.fechaFinal").value("2026-12-10"))
+            .andExpect(jsonPath("$.hotel.nombre").value("Sheraton"))
+            .andExpect(jsonPath("$.hotel.foto").value("sheraton.jpg"))
+            .andExpect(jsonPath("$.agencia.nombre").value("Agencia Sur"))
+        mockServer.verify()
     }
 
     @Test

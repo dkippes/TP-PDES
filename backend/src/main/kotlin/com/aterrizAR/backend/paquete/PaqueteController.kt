@@ -46,13 +46,10 @@ class PaqueteController(
         paqueteService.buscar(filtros).toDTO()
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtiene un paquete por id")
-    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Obtiene un paquete por id", description = "Detalle público, disponible sin iniciar sesión")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "Paquete encontrado"),
-            ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-            ApiResponse(responseCode = "403", description = "El rol no permite esta operación"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
         ],
     )

@@ -14,11 +14,15 @@ import { ComprasPage } from './ComprasPage'
 import { FavoritosPage } from './FavoritosPage'
 import { HomePage } from './HomePage'
 import { ResultadosPage } from './ResultadosPage'
+import { PaquetePage } from './PaquetePage'
 
 type CompradorPageProps = SessionEvents & {
   session: SesionAutenticada
   paquetesApi: PaquetesApi
-  view: 'home' | 'favoritos' | 'compras' | 'resultados'
+  view: 'home' | 'favoritos' | 'compras' | 'resultados' | 'paquete'
+  paqueteId: number | null
+  onVerDetalle: (id: number) => void
+  onVolverListado: () => void
   busqueda: PaqueteBusquedaDTO
   onBusquedaChange: (filtros: PaqueteBusquedaDTO) => void
   onSearch: (filtros: PaqueteBusquedaDTO) => void
@@ -27,7 +31,7 @@ type CompradorPageProps = SessionEvents & {
 }
 
 /** Buyer views share favorites, purchases and one purchase dialog, so they survive navigating between views. */
-export function CompradorPage({ session, paquetesApi, view, busqueda, onBusquedaChange, onSearch, onHome, onCompras, onSessionRenewed, onSessionExpired }: CompradorPageProps) {
+export function CompradorPage({ session, paquetesApi, view, paqueteId, onVerDetalle, onVolverListado, busqueda, onBusquedaChange, onSearch, onHome, onCompras, onSessionRenewed, onSessionExpired }: CompradorPageProps) {
   const request = useMemo(() => createAuthenticatedRequest(session.accessToken, { onSessionRenewed, onSessionExpired }),
     [session.accessToken, onSessionRenewed, onSessionExpired])
   const favoritosApi = useMemo(() => createFavoritosApi(request), [request])
@@ -38,10 +42,11 @@ export function CompradorPage({ session, paquetesApi, view, busqueda, onBusqueda
   const compraControls: CompraControls = { comprados: historial.comprados, comprar: compra.abrir }
 
   const vista = () => {
-    if (view === 'favoritos') return <FavoritosPage paquetes={paquetes} favoritos={controls} compra={compraControls} onHome={onHome} />
+    if (view === 'paquete') return <PaquetePage key={paqueteId} api={paquetesApi} paqueteId={paqueteId} onBack={onVolverListado} favoritos={controls} compra={compraControls} />
+    if (view === 'favoritos') return <FavoritosPage paquetes={paquetes} onVerDetalle={onVerDetalle} favoritos={controls} compra={compraControls} onHome={onHome} />
     if (view === 'compras') return <ComprasPage compras={historial.compras} loading={historial.loading} error={historial.error} onRetry={historial.reload} onHome={onHome} />
-    if (view === 'resultados') return <ResultadosPage api={paquetesApi} filtros={busqueda} onFiltrosChange={onBusquedaChange} onBack={onHome} favoritos={controls} compra={compraControls} />
-    return <HomePage api={paquetesApi} onSearch={onSearch} favoritos={controls} compra={compraControls} />
+    if (view === 'resultados') return <ResultadosPage api={paquetesApi} onVerDetalle={onVerDetalle} filtros={busqueda} onFiltrosChange={onBusquedaChange} onBack={onHome} favoritos={controls} compra={compraControls} />
+    return <HomePage api={paquetesApi} onVerDetalle={onVerDetalle} onSearch={onSearch} favoritos={controls} compra={compraControls} />
   }
 
   return <>
