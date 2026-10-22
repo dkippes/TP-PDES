@@ -1,6 +1,7 @@
 import type { CompraControls } from '../../types/compra'
 import type { FavoritosControls } from '../../types/favorito'
 import type { PaqueteResponseDTO } from '../../types/paquete'
+import { disponibilidadVigente } from './disponibilidad'
 import { PaqueteCard } from './PaqueteCard'
 
 type PaquetesGridProps = {
@@ -17,6 +18,7 @@ export function PaquetesGrid({ paquetes, onVerDetalle, favoritos, compra, classN
       guardado: favoritos.ids.has(paquete.id), disabled: favoritos.disabled,
       onToggle: () => favoritos.toggle(paquete),
     }} onComprar={compra && (() => compra.comprar(paquete))}
-    comprado={compra?.comprados.get(paquete.id)} />)}
+    comprado={compra?.comprados.get(paquete.id)}
+    disponibilidad={disponibilidadVigente(paquete, compra?.disponibilidades)} />)}
   </div>
 }

@@ -1,67 +1,85 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router'
 import type { SesionAutenticada } from './api/auth'
 import { requestJson } from './api/http'
 import { createPaquetesApi } from './api/paquetes'
 import { Navbar } from './components/Navbar'
 import { AppLayout } from './components/layout/AppLayout'
 import { useSession } from './hooks/useSession'
-import { useNavigation } from './hooks/useNavigation'
-import { HomePage } from './pages/HomePage'
 import { AdminHomePage } from './pages/AdminHomePage'
 import { CompradorPage } from './pages/CompradorPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
-import { ResultadosPage } from './pages/ResultadosPage'
-import { PaquetePage } from './pages/PaquetePage'
-import type { View } from './types'
+import { ComprasRoute, FavoritosRoute, InicioRoute, PaqueteRoute, ResultadosRoute } from './routes/CatalogoRoutes'
+import { RequireRole } from './routes/RequireRole'
+import { esRutaDeVisitante, rutas, type DestinoState } from './routes/rutas'
+import { SoloVisitantes } from './routes/SoloVisitantes'
 import type { UsuarioResponseDTO } from './types/admin'
 
 const paquetesApi = createPaquetesApi(requestJson)
-const vistasComprador = ['home', 'favoritos', 'compras', 'resultados', 'paquete'] as const
-const esVistaComprador = (view: View): view is typeof vistasComprador[number] => (vistasComprador as readonly View[]).includes(view)
 
 function App() {
-  const { view, busqueda, paqueteId, navigate: setView, search: handleSearch, changeSearch: setBusqueda, openPackage, backToList } = useNavigation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  // useNavigate changes identity on every navigation; session callbacks must stay stable so API clients are not recreated.
+  const navigateRef = useRef(navigate)
+  useEffect(() => { navigateRef.current = navigate })
+  useEffect(() => { window.scrollTo(0, 0) }, [location.key])
   const [message, setMessage] = useState('')
   const handleSessionEnded = useCallback((notice: string) => {
     setMessage(notice)
-    setView('login')
-  }, [setView])
+    // Concurrent requests may report the same expiry more than once; only the first one keeps the destination.
+    if (esRutaDeVisitante(window.location.pathname)) return
+    navigateRef.current(rutas.login, { state: { from: window.location.pathname } satisfies DestinoState })
+  }, [])
   const { session, restoring, loggingOut, acceptSession, renewSession, expireSession, updateCurrentUser, logout } = useSession({
     onMessage: setMessage, onSessionEnded: handleSessionEnded,
   })
 
+  // SoloVisitantes sends the new session to the page that required it, or to Inicio.
   const handleLoggedIn = (authenticated: SesionAutenticada) => {
     acceptSession(authenticated)
     setMessage('')
-    setView('home')
   }
+  // Login and registration forward the location state so the visitor keeps its destination.
   const handleRegistered = () => {
     setMessage('Cuenta creada. Iniciá sesión para continuar.')
-    setView('login')
+    navigate(rutas.login, { state: location.state })
   }
-  const handleLogout = async () => {
-    if (await logout()) setView('home')
-  }
+  const handleLogout = () => logout(() => navigate(rutas.inicio))
   const handleCurrentUserUpdated = useCallback((usuario: UsuarioResponseDTO, passwordChanged: boolean) => {
     updateCurrentUser({
       id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido,
       correo: usuario.correo, direccion: usuario.direccion, role: usuario.rol,
     }, passwordChanged)
   }, [updateCurrentUser])
-  const comprador = session?.user.role === 'COMPRADOR'
-  const currentView = (view === 'admin' && session?.user.role !== 'ADMINISTRADOR') || ((view === 'favoritos' || view === 'compras') && !comprador) ? 'home' : view
+  const comprador = session?.user.role === 'COMPRADOR' ? session : null
 
   return <AppLayout message={message} restoring={restoring} navigation={
-    <Navbar view={currentView} onNavigate={setView} user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
+    <Navbar user={session?.user ?? null} onLogout={handleLogout} busy={restoring || loggingOut} />
   }>
-    {comprador && session && esVistaComprador(currentView) && <CompradorPage key={session.user.id} session={session} paquetesApi={paquetesApi} view={currentView} paqueteId={paqueteId} onVerDetalle={openPackage} onVolverListado={backToList} busqueda={busqueda} onBusquedaChange={setBusqueda} onSearch={handleSearch} onHome={() => setView('home')} onCompras={() => setView('compras')} onSessionRenewed={renewSession} onSessionExpired={expireSession} />}
-    {!comprador && currentView === 'home' && <HomePage api={paquetesApi} onVerDetalle={openPackage} onSearch={handleSearch} invitacion={session ? undefined : { onRegister: () => setView('register'), onLogin: () => setView('login') }} />}
-    {!comprador && currentView === 'resultados' && <ResultadosPage api={paquetesApi} onVerDetalle={openPackage} filtros={busqueda} onFiltrosChange={setBusqueda} onBack={() => setView('home')} />}
-    {!comprador && currentView === 'paquete' && <PaquetePage key={paqueteId} api={paquetesApi} paqueteId={paqueteId} onBack={backToList} />}
-    {currentView === 'admin' && session?.user.role === 'ADMINISTRADOR' && <AdminHomePage session={session} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />}
-    {currentView === 'login' && <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => setView('register')} />}
-    {currentView === 'register' && <RegisterPage onRegistered={handleRegistered} onLogin={() => setView('login')} />}
+    <Routes>
+      {/* Every route shares the layout, so a buyer redirected by a guard keeps CompradorPage mounted. */}
+      <Route element={comprador
+        ? <CompradorPage key={comprador.user.id} session={comprador} paquetesApi={paquetesApi} onSessionRenewed={renewSession} onSessionExpired={expireSession} />
+        : <Outlet />}>
+        <Route index element={<InicioRoute api={paquetesApi} session={session} />} />
+        <Route path={rutas.resultados} element={<ResultadosRoute api={paquetesApi} />} />
+        <Route path="/paquetes/:id" element={<PaqueteRoute api={paquetesApi} />} />
+        <Route path={rutas.favoritos} element={<RequireRole session={session} role="COMPRADOR">{() => <FavoritosRoute />}</RequireRole>} />
+        <Route path={rutas.compras} element={<RequireRole session={session} role="COMPRADOR">{() => <ComprasRoute />}</RequireRole>} />
+        <Route path={rutas.admin} element={<RequireRole session={session} role="ADMINISTRADOR">{(admin) =>
+          <AdminHomePage session={admin} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />
+        }</RequireRole>} />
+        <Route path={rutas.login} element={<SoloVisitantes session={session}>
+          <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => navigate(rutas.registro, { state: location.state })} />
+        </SoloVisitantes>} />
+        <Route path={rutas.registro} element={<SoloVisitantes session={session}>
+          <RegisterPage onRegistered={handleRegistered} onLogin={() => navigate(rutas.login, { state: location.state })} />
+        </SoloVisitantes>} />
+        <Route path="*" element={<Navigate to={rutas.inicio} replace />} />
+      </Route>
+    </Routes>
   </AppLayout>
 }
 

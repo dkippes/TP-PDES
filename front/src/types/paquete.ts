@@ -8,6 +8,8 @@ export type PaqueteResponseDTO = {
   fechaFinal: string
   hotel: { nombre: string; pais: string }
   agencia: { id: number; nombre: string }
+  /** Seats left (the lower of both flights); null when flying-service did not answer, so it is unknown. */
+  disponibilidad: number | null
 }
 
 export type PaqueteDetalleDTO = PaqueteResponseDTO & {

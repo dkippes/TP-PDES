@@ -8,7 +8,9 @@ import org.springframework.web.server.ResponseStatusException
 class VueloService(
     private val vueloRepository: VueloRepository,
 ) {
-    fun findAll(): List<Vuelo> = vueloRepository.findAll()
+    /** Without [ids] returns every flight; with [ids] only the existing ones (missing ids are absent, empty list gives empty). */
+    fun findAll(ids: List<Long>? = null): List<Vuelo> =
+        if (ids == null) vueloRepository.findAll() else vueloRepository.findAllById(ids.distinct())
 
     fun findById(id: Long): Vuelo =
         vueloRepository.findById(id)

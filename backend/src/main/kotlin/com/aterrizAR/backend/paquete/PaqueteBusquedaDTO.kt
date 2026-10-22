@@ -64,15 +64,15 @@ data class PaqueteBusquedaDTO(
 )
 
 data class PaquetesPaginaDTO(
-    val contenido: List<Paquete>,
+    val contenido: List<PaqueteDTO>,
     val pagina: Int,
     val tamanio: Int,
     val totalElementos: Long,
     val totalPaginas: Int,
 )
 
-fun Page<Paquete>.toDTO() = PaquetesPaginaDTO(
-    contenido = content,
+fun Page<Paquete>.toDTO(contenido: List<PaqueteDTO>) = PaquetesPaginaDTO(
+    contenido = contenido,
     pagina = number,
     tamanio = size,
     totalElementos = totalElements,

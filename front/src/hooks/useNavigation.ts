@@ -1,59 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { View } from '../types'
+import { useLocation, useNavigate } from 'react-router'
+import { rutas } from '../routes/rutas'
 import type { PaqueteBusquedaDTO } from '../types/paquete'
 
-type Navigation = {
-  view: View
-  busqueda: PaqueteBusquedaDTO
-  paqueteId: number | null
-  desdeListado: boolean
-}
+type NavigationState = { busqueda?: PaqueteBusquedaDTO; desdeListado?: boolean }
 
-function readNavigation(): Navigation {
-  const saved = window.history.state?.navigation as Navigation | undefined
-  if (window.location.pathname.startsWith('/paquetes/')) {
-    const match = /^\/paquetes\/([1-9]\d*)\/?$/.exec(window.location.pathname)
-    const id = match ? Number(match[1]) : NaN
-    return {
-      view: 'paquete', paqueteId: Number.isSafeInteger(id) ? id : null,
-      busqueda: saved?.busqueda ?? {}, desdeListado: saved?.desdeListado ?? false,
-    }
-  }
-  return saved ?? { view: 'home', busqueda: {}, paqueteId: null, desdeListado: false }
-}
+// Stable identity: the results reload whenever the filters object changes.
+const sinFiltros: PaqueteBusquedaDTO = {}
 
-/** The detail has a shareable URL; history also preserves the source list and its filters. */
+/** Search filters and the source list live in history state, so back/forward and reloads keep them. */
 export function useNavigation() {
-  const [navigation, setNavigation] = useState(readNavigation)
+  const navigate = useNavigate()
+  const state = (useLocation().state ?? {}) as NavigationState
 
-  useEffect(() => {
-    window.history.replaceState({ navigation: readNavigation() }, '', window.location.href)
-    const onPopState = () => { setNavigation(readNavigation()); window.scrollTo(0, 0) }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
-
-  const go = useCallback((next: Navigation, replace = false) => {
-    const url = next.view === 'paquete' ? `/paquetes/${next.paqueteId}` : '/'
-    if (replace) window.history.replaceState({ navigation: next }, '', url)
-    else window.history.pushState({ navigation: next }, '', url)
-    setNavigation(next)
-    window.scrollTo(0, 0)
-  }, [])
-
-  const navigate = useCallback((view: View) => {
-    go({ ...navigation, view, paqueteId: null, desdeListado: false })
-  }, [go, navigation])
-
-  const search = (busqueda: PaqueteBusquedaDTO) => go({ ...navigation, view: 'resultados', busqueda, paqueteId: null })
-  const changeSearch = (busqueda: PaqueteBusquedaDTO) => go({ ...navigation, busqueda }, true)
-  const openPackage = (paqueteId: number) => {
-    go({ ...navigation, view: 'paquete', paqueteId, desdeListado: true })
-  }
+  const search = (busqueda: PaqueteBusquedaDTO) => navigate(rutas.resultados, { state: { busqueda } })
+  const changeSearch = (busqueda: PaqueteBusquedaDTO) => navigate(rutas.resultados, { replace: true, state: { busqueda } })
+  const openPackage = (paqueteId: number) => navigate(rutas.paquete(paqueteId), { state: { desdeListado: true } })
   const backToList = () => {
-    if (navigation.desdeListado) window.history.back()
-    else navigate('home')
+    if (state.desdeListado) navigate(-1)
+    else navigate(rutas.inicio)
   }
 
-  return { ...navigation, navigate, search, changeSearch, openPackage, backToList }
+  return { busqueda: state.busqueda ?? sinFiltros, search, changeSearch, openPackage, backToList }
 }

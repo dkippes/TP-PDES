@@ -104,4 +104,22 @@ class VueloServiceTest {
             vueloService.update(created.id!!, sampleRequest().copy(capacidad = 10, disponibilidad = 50))
         }
     }
+
+    @Test
+    fun `findAll with ids returns only the existing requested flights`() {
+        val first = vueloService.create(sampleRequest(disponibilidad = 10))
+        vueloService.create(sampleRequest(disponibilidad = 20))
+
+        val result = vueloService.findAll(listOf(first.id!!, first.id!!, 99999L))
+
+        assertEquals(listOf(first.id), result.map { it.id })
+    }
+
+    @Test
+    fun `findAll with an empty ids list returns nothing and without ids returns everything`() {
+        vueloService.create(sampleRequest())
+
+        assertEquals(0, vueloService.findAll(emptyList()).size)
+        assertEquals(1, vueloService.findAll().size)
+    }
 }

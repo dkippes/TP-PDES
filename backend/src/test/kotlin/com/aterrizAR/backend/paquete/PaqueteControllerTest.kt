@@ -91,11 +91,13 @@ class PaqueteControllerTest {
     fun `POST paquetes creates a paquete`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 5)
 
         perform(post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()))
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.destino").value("Bariloche"))
+            .andExpect(jsonPath("$.disponibilidad").value(5))
     }
 
     @Test
@@ -123,13 +125,16 @@ class PaqueteControllerTest {
         mockMvc.perform(get("/api/paquetes/999")).andExpect(status().isNotFound)
     }
 
+    private fun paqueteGuardado(vueloIdaId: Long = 1, vueloVueltaId: Long = 2) = paqueteRepository.save(Paquete(
+        precio = 1500f, vueloIdaId = vueloIdaId, vueloVueltaId = vueloVueltaId, hotel = hotel, agencia = agencia,
+        origen = "Buenos Aires", destino = "Bariloche",
+        fechaInicial = LocalDate.of(2026, 12, 1), fechaFinal = LocalDate.of(2026, 12, 10),
+    ))
+
     @Test
-    fun `GET paquete detail returns its data without authentication or flight calls`() {
-        val paquete = paqueteRepository.save(Paquete(
-            precio = 1500f, vueloIdaId = 1, vueloVueltaId = 2, hotel = hotel, agencia = agencia,
-            origen = "Buenos Aires", destino = "Bariloche",
-            fechaInicial = LocalDate.of(2026, 12, 1), fechaFinal = LocalDate.of(2026, 12, 10),
-        ))
+    fun `GET paquete detail returns its data and the lower flight availability without authentication`() {
+        val paquete = paqueteGuardado()
+        mockServer.expectDisponibilidades(1L to 8, 2L to 3)
 
         mockMvc.perform(get("/api/paquetes/${paquete.id}"))
             .andExpect(status().isOk)
@@ -141,6 +146,44 @@ class PaqueteControllerTest {
             .andExpect(jsonPath("$.hotel.nombre").value("Sheraton"))
             .andExpect(jsonPath("$.hotel.foto").value("sheraton.jpg"))
             .andExpect(jsonPath("$.agencia.nombre").value("Agencia Sur"))
+            .andExpect(jsonPath("$.disponibilidad").value(3))
+        mockServer.verify()
+    }
+
+    @Test
+    fun `GET paquete detail reports null availability when flying-service fails`() {
+        val paquete = paqueteGuardado()
+        mockServer.expectDisponibilidadesFallidas(1, 2)
+
+        mockMvc.perform(get("/api/paquetes/${paquete.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.destino").value("Bariloche"))
+            .andExpect(jsonPath("$.disponibilidad").hasJsonPath())
+            .andExpect(jsonPath("$.disponibilidad").value(null as Any?))
+        mockServer.verify()
+    }
+
+    @Test
+    fun `GET paquete detail reports zero availability when one of its flights is missing`() {
+        val paquete = paqueteGuardado()
+        mockServer.expectDisponibilidades(1L to 8, consultados = listOf(1, 2))
+
+        mockMvc.perform(get("/api/paquetes/${paquete.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.disponibilidad").value(0))
+        mockServer.verify()
+    }
+
+    @Test
+    fun `GET paquetes list asks flying-service once and reports each package availability`() {
+        val primero = paqueteGuardado(1, 2)
+        val segundo = paqueteGuardado(3, 4)
+        mockServer.expectDisponibilidades(1L to 10, 2L to 7, 3L to 0, 4L to 9)
+
+        mockMvc.perform(get("/api/paquetes"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.id == ${primero.id})].disponibilidad").value(7))
+            .andExpect(jsonPath("$[?(@.id == ${segundo.id})].disponibilidad").value(0))
         mockServer.verify()
     }
 
@@ -148,6 +191,7 @@ class PaqueteControllerTest {
     fun `full crud flow through the HTTP layer`() {
         expectVueloCheck(1, 10)
         expectVueloCheck(2, 5)
+        repeat(3) { mockServer.expectDisponibilidades(1L to 10, 2L to 5) }
 
         val createResult = perform(
             post("/api/paquetes").contentType(MediaType.APPLICATION_JSON).content(paqueteJson()),

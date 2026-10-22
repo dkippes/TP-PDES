@@ -1,26 +1,31 @@
-import type { View } from '../types'
+import { useLocation, useNavigate } from 'react-router'
 import type { UsuarioAutenticado } from '../api/auth'
+import { rutas } from '../routes/rutas'
 import { SessionActions } from './navigation/SessionActions'
 
 type NavbarProps = {
-  view: View
-  onNavigate: (view: View) => void
   user: UsuarioAutenticado | null
   onLogout: () => void
   busy: boolean
 }
 
-export function Navbar({ view, onNavigate, user, onLogout, busy }: NavbarProps) {
+const linkClass = 'text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700'
+
+export function Navbar({ user, onLogout, busy }: NavbarProps) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const current = (path: string) => pathname === path ? 'page' : undefined
+
   return (
     <header className="border-b border-slate-200 bg-white">
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4" aria-label="Navegación principal">
-        <button className="text-xl font-bold text-sky-700" type="button" onClick={() => onNavigate('home')}>AterrizAR</button>
+        <button className="text-xl font-bold text-sky-700" type="button" onClick={() => navigate(rutas.inicio)}>AterrizAR</button>
         <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-          <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'home' ? 'page' : undefined} onClick={() => onNavigate('home')}>Inicio</button>
-          {user?.role === 'COMPRADOR' && <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'favoritos' ? 'page' : undefined} onClick={() => onNavigate('favoritos')} disabled={busy}>Mis favoritos</button>}
-          {user?.role === 'COMPRADOR' && <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'compras' ? 'page' : undefined} onClick={() => onNavigate('compras')} disabled={busy}>Mis compras</button>}
-          {user?.role === 'ADMINISTRADOR' && <button className="text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700" type="button" aria-current={view === 'admin' ? 'page' : undefined} onClick={() => onNavigate('admin')} disabled={busy}>Administración</button>}
-          <SessionActions user={user} busy={busy} onLogin={() => onNavigate('login')} onRegister={() => onNavigate('register')} onLogout={onLogout} />
+          <button className={linkClass} type="button" aria-current={current(rutas.inicio)} onClick={() => navigate(rutas.inicio)}>Inicio</button>
+          {user?.role === 'COMPRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.favoritos)} onClick={() => navigate(rutas.favoritos)} disabled={busy}>Mis favoritos</button>}
+          {user?.role === 'COMPRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.compras)} onClick={() => navigate(rutas.compras)} disabled={busy}>Mis compras</button>}
+          {user?.role === 'ADMINISTRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.admin)} onClick={() => navigate(rutas.admin)} disabled={busy}>Administración</button>}
+          <SessionActions user={user} busy={busy} onLogin={() => navigate(rutas.login)} onRegister={() => navigate(rutas.registro)} onLogout={onLogout} />
         </div>
       </nav>
     </header>

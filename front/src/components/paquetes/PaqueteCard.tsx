@@ -1,5 +1,7 @@
 import placeholder from '../../assets/paquete-placeholder.svg'
 import type { PaqueteResponseDTO } from '../../types/paquete'
+import { DisponibilidadPaquete } from './DisponibilidadPaquete'
+import { esAgotado } from './disponibilidad'
 import { FavoritoButton } from './FavoritoButton'
 import { formatPrecio, formatRango } from './format'
 
@@ -10,9 +12,13 @@ type PaqueteCardProps = {
   onComprar?: () => void
   /** Times the signed-in buyer already bought this package. */
   comprado?: number
+  /** Seats left, already resolved against any refresh after a purchase; null when unknown. */
+  disponibilidad: number | null
 }
 
-export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, comprado = 0 }: PaqueteCardProps) {
+export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, comprado = 0, disponibilidad }: PaqueteCardProps) {
+  const idDisponibilidad = `disponibilidad-paquete-${paquete.id}`
+
   return <article className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-sky-300 hover:shadow-md">
     <div>
       <img src={placeholder} alt="Ilustración de viaje" className="aspect-[5/3] w-full object-cover" loading="lazy" />
@@ -31,6 +37,7 @@ export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, compra
         {' '}<span className="text-sm font-normal text-slate-500">{paquete.hotel.pais}</span>
       </h2>
       <p className="mt-1 text-sm font-medium text-sky-700">{formatRango(paquete.fechaInicial, paquete.fechaFinal)}</p>
+      <DisponibilidadPaquete disponibilidad={disponibilidad} id={idDisponibilidad} className="mt-1" />
       <p className="mt-3 text-sm leading-6 text-slate-600">
         Viaje desde {paquete.origen} a {paquete.destino}, con vuelos de ida y vuelta y estadía en {paquete.hotel.nombre}.
       </p>
@@ -38,8 +45,9 @@ export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, compra
         <p className="text-xs text-slate-500">por {paquete.agencia.nombre}</p>
         <p className="text-2xl font-bold text-slate-900">{formatPrecio(paquete.precio)}</p>
       </div>
-      {onComprar && <button type="button" onClick={onComprar} aria-label={`Comprar viaje a ${paquete.destino}`}
-        className="relative z-10 mt-4 rounded-lg bg-sky-700 px-5 py-2.5 font-semibold text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700">
+      {onComprar && <button type="button" onClick={onComprar} disabled={esAgotado(disponibilidad)}
+        aria-label={`Comprar viaje a ${paquete.destino}`} aria-describedby={disponibilidad === null ? undefined : idDisponibilidad}
+        className="relative z-10 mt-4 rounded-lg bg-sky-700 px-5 py-2.5 font-semibold text-white enabled:hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
         {comprado > 0 ? 'Comprar otra vez' : 'Comprar'}
       </button>}
     </div>

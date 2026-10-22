@@ -1,8 +1,7 @@
 import type { CompraResponseDTO } from '../../types/compra'
-import type { PaqueteResponseDTO } from '../../types/paquete'
 
 export type CompraGrupo = {
-  paquete: PaqueteResponseDTO
+  paquete: CompraResponseDTO['paquete']
   /** Same order as the input: newest first. */
   compras: CompraResponseDTO[]
   total: number
