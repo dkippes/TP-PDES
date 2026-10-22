@@ -16,7 +16,7 @@ type PaqueteCardProps = {
   disponibilidad: number | null
 }
 
-export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, comprado = 0, disponibilidad }: PaqueteCardProps) {
+export function PaqueteCard({ paquete, onVerDetalle, favorito, onComprar, comprado = 0, disponibilidad }: Readonly<PaqueteCardProps>) {
   const idDisponibilidad = `disponibilidad-paquete-${paquete.id}`
 
   return <article className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-sky-300 hover:shadow-md">

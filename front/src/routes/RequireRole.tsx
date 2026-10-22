@@ -11,7 +11,7 @@ type RequireRoleProps = {
 }
 
 /** Visitors go to login and come back afterwards; accounts with another role go to Inicio. */
-export function RequireRole({ session, role, children }: RequireRoleProps) {
+export function RequireRole({ session, role, children }: Readonly<RequireRoleProps>) {
   const location = useLocation()
   if (!session) return <Navigate to={rutas.login} replace state={{ from: location.pathname } satisfies DestinoState} />
   if (session.user.role !== role) return <Navigate to={rutas.inicio} replace />

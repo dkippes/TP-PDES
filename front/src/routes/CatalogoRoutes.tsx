@@ -12,7 +12,7 @@ import { rutas } from './rutas'
 
 type CatalogoRouteProps = { api: PaquetesApi }
 
-export function InicioRoute({ api, session }: CatalogoRouteProps & { session: SesionAutenticada | null }) {
+export function InicioRoute({ api, session }: Readonly<CatalogoRouteProps & { session: SesionAutenticada | null }>) {
   const navigate = useNavigate()
   const { openPackage, search } = useNavigation()
   const comprador = useCompradorContext()
@@ -20,7 +20,7 @@ export function InicioRoute({ api, session }: CatalogoRouteProps & { session: Se
     invitacion={session ? undefined : { onRegister: () => navigate(rutas.registro), onLogin: () => navigate(rutas.login) }} />
 }
 
-export function ResultadosRoute({ api }: CatalogoRouteProps) {
+export function ResultadosRoute({ api }: Readonly<CatalogoRouteProps>) {
   const navigate = useNavigate()
   const { busqueda, changeSearch, openPackage } = useNavigation()
   const comprador = useCompradorContext()
@@ -35,7 +35,7 @@ function parsePaqueteId(value: string | undefined): number | null {
   return Number.isSafeInteger(id) ? id : null
 }
 
-export function PaqueteRoute({ api }: CatalogoRouteProps) {
+export function PaqueteRoute({ api }: Readonly<CatalogoRouteProps>) {
   const paqueteId = parsePaqueteId(useParams().id)
   const { backToList } = useNavigation()
   const comprador = useCompradorContext()

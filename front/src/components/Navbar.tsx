@@ -11,7 +11,7 @@ type NavbarProps = {
 
 const linkClass = 'text-slate-600 hover:text-sky-700 aria-[current=page]:font-bold aria-[current=page]:text-sky-700'
 
-export function Navbar({ user, onLogout, busy }: NavbarProps) {
+export function Navbar({ user, onLogout, busy }: Readonly<NavbarProps>) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const current = (path: string) => pathname === path ? 'page' : undefined

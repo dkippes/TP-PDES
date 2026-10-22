@@ -43,6 +43,6 @@ export function CompradorPage({ session, paquetesApi, onSessionRenewed, onSessio
     <Outlet context={context} />
     {compra.paquete && <CompraModal paquete={compra.paquete} compra={compra.compra} busy={compra.busy} error={compra.error}
       onConfirm={() => void compra.confirmar()} onClose={compra.cerrar}
-      onVerCompras={() => { compra.cerrar(); navigate(rutas.compras) }} />}
+      onVerCompras={() => { compra.cerrar(); void navigate(rutas.compras) }} />}
   </>
 }

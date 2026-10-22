@@ -6,7 +6,7 @@ import { destinoTrasLogin } from './rutas'
 type SoloVisitantesProps = { session: SesionAutenticada | null; children: ReactNode }
 
 /** Login and registration are for visitors; a session (including one just started) continues to its destination. */
-export function SoloVisitantes({ session, children }: SoloVisitantesProps) {
+export function SoloVisitantes({ session, children }: Readonly<SoloVisitantesProps>) {
   const location = useLocation()
   if (session) return <Navigate to={destinoTrasLogin(location.state)} replace />
   return children

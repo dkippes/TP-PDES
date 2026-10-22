@@ -16,8 +16,8 @@ export function useNavigation() {
   const changeSearch = (busqueda: PaqueteBusquedaDTO) => navigate(rutas.resultados, { replace: true, state: { busqueda } })
   const openPackage = (paqueteId: number) => navigate(rutas.paquete(paqueteId), { state: { desdeListado: true } })
   const backToList = () => {
-    if (state.desdeListado) navigate(-1)
-    else navigate(rutas.inicio)
+    if (state.desdeListado) void navigate(-1)
+    else void navigate(rutas.inicio)
   }
 
   return { busqueda: state.busqueda ?? sinFiltros, search, changeSearch, openPackage, backToList }

@@ -30,7 +30,7 @@ function App() {
     setMessage(notice)
     // Concurrent requests may report the same expiry more than once; only the first one keeps the destination.
     if (esRutaDeVisitante(window.location.pathname)) return
-    navigateRef.current(rutas.login, { state: { from: window.location.pathname } satisfies DestinoState })
+    void navigateRef.current(rutas.login, { state: { from: window.location.pathname } satisfies DestinoState })
   }, [])
   const { session, restoring, loggingOut, acceptSession, renewSession, expireSession, updateCurrentUser, logout } = useSession({
     onMessage: setMessage, onSessionEnded: handleSessionEnded,
@@ -44,7 +44,7 @@ function App() {
   // Login and registration forward the location state so the visitor keeps its destination.
   const handleRegistered = () => {
     setMessage('Cuenta creada. Iniciá sesión para continuar.')
-    navigate(rutas.login, { state: location.state })
+    void navigate(rutas.login, { state: location.state })
   }
   const handleLogout = () => logout(() => navigate(rutas.inicio))
   const handleCurrentUserUpdated = useCallback((usuario: UsuarioResponseDTO, passwordChanged: boolean) => {
