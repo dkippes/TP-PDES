@@ -57,6 +57,8 @@ async function openPage(t, { role, favorite = false, disponibilidad = 12, photo 
     if (path === '/api/paquetes/buscar') return route.fulfill({ json: {
       contenido: [actual()], pagina: Number(url.searchParams.get('pagina') ?? 0), tamanio: 12, totalElementos: 24, totalPaginas: 2,
     } })
+    if (path === '/api/paquetes/1/valoraciones') return route.fulfill({ json: { promedio: null, total: 0, valoraciones: [] } })
+    if (path === '/api/valoraciones/mias') return route.fulfill({ json: [] })
     if (path.startsWith('/api/paquetes/')) {
       // The body is fixed when the request arrives; a held read answers later with what it saw then.
       const status = path === '/api/paquetes/1' ? detailResponse.status : 404

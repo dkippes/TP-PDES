@@ -33,6 +33,7 @@ export function CompraModal({ paquete, compra, busy, error, onConfirm, onClose, 
       <div className="flex justify-between gap-4"><dt className="font-semibold">Número de compra</dt><dd>{compra.id}</dd></div>
       <div className="flex justify-between gap-4 border-t border-slate-200 pt-2 text-base"><dt className="font-semibold">Pagaste</dt><dd className="font-bold text-slate-900">{formatPrecio(compra.precio)}</dd></div>
     </dl>
+    <p className="mt-5 text-sm text-slate-600">Si querés, podés calificar este paquete desde Mis compras.</p>
     <div className="mt-6 flex flex-wrap justify-end gap-3">
       <button type="button" onClick={onClose} className="rounded-lg px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-100">Seguir explorando</button>
       <button type="button" onClick={onVerCompras} className="rounded-lg bg-sky-700 px-5 py-2.5 font-semibold text-white hover:bg-sky-800">Ver mis compras</button>

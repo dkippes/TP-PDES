@@ -1,4 +1,5 @@
 import { useOutletContext } from 'react-router'
+import type { ValoracionesApi } from '../api/valoraciones'
 import type { useCompras } from '../hooks/useCompras'
 import type { CompraControls } from '../types/compra'
 import type { FavoritosControls } from '../types/favorito'
@@ -10,6 +11,7 @@ export type CompradorContext = {
   paquetesFavoritos: PaqueteResponseDTO[]
   compra: CompraControls
   historial: ReturnType<typeof useCompras>
+  valoracionesApi: ValoracionesApi
 }
 
 /** Undefined for visitors and other roles, whose catalog routes render without buyer actions. */

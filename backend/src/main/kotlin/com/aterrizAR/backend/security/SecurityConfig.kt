@@ -69,6 +69,7 @@ class SecurityConfig(
                 "/api/paquetes",
                 "/api/paquetes/buscar",
                 "/api/paquetes/{id}",
+                "/api/paquetes/{paqueteId}/valoraciones",
                 "/api/agencias",
                 "/swagger-ui/**",
                 "/swagger-ui.html",

@@ -56,7 +56,7 @@ async function openPage(t, { role, loginRole } = {}) {
       return route.fulfill({ status: 204 })
     }
     if (path === '/api/paquetes') return route.fulfill({ json: [paquete] })
-    if (['/api/favoritos', '/api/compras', '/api/usuarios'].includes(path)) return route.fulfill({ json: [] })
+    if (['/api/favoritos', '/api/compras', '/api/usuarios', '/api/valoraciones/mias'].includes(path)) return route.fulfill({ json: [] })
     if (path === '/api/agencias') return route.fulfill({ json: [paquete.agencia] })
     errors.push(`Unexpected request: ${method} ${path}`)
     return route.fulfill({ status: 500, json: {} })
