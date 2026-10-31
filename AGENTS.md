@@ -187,6 +187,8 @@ cd backend
 
 On Windows without a POSIX shell, use `gradlew.bat` instead of `./gradlew`.
 
+Backend architecture tests use ArchUnit with the existing JUnit runner in `architecture/ArchitectureTest.kt`. They inspect production bytecode without starting Spring, a database, Docker or HTTP services. Run only these checks with `gradlew.bat test --tests "com.aterrizAR.backend.architecture.ArchitectureTest"` from `backend/`; they also run with the normal `test`/`build` tasks. Rules protect layer dependencies, model isolation and JPA repository contracts, and prohibit field injection with `@Autowired`. Only the documented `PingController -> PingLogRepository` and `PingController -> RestTemplate` dependencies are exempted; new controllers must follow the normal boundaries.
+
 ### Flying service
 
 ```bash
