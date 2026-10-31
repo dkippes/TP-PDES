@@ -4,6 +4,7 @@ import type { SesionAutenticada } from '../api/auth'
 import { createAuthenticatedRequest, type SessionEvents } from '../api/authenticated'
 import { createComprasApi } from '../api/compras'
 import { createFavoritosApi } from '../api/favoritos'
+import { createValoracionesApi } from '../api/valoraciones'
 import type { PaquetesApi } from '../api/paquetes'
 import { CompraModal } from '../components/compras/CompraModal'
 import { useCompra } from '../hooks/useCompra'
@@ -27,6 +28,7 @@ export function CompradorPage({ session, paquetesApi, onSessionRenewed, onSessio
     [session.accessToken, onSessionRenewed, onSessionExpired])
   const favoritosApi = useMemo(() => createFavoritosApi(request), [request])
   const comprasApi = useMemo(() => createComprasApi(request), [request])
+  const valoracionesApi = useMemo(() => createValoracionesApi(request), [request])
   const { paquetes, controls, actualizar } = useFavoritos(favoritosApi)
   const historial = useCompras(comprasApi)
   const { disponibilidades, refrescar, limpiar } = useDisponibilidades(paquetesApi)
@@ -37,7 +39,7 @@ export function CompradorPage({ session, paquetesApi, onSessionRenewed, onSessio
     void refrescar(confirmada.paquete.id).then((paquete) => { if (paquete) actualizar(paquete) })
   })
   const compraControls: CompraControls = { comprados: historial.comprados, disponibilidades, comprar: compra.abrir }
-  const context: CompradorContext = { favoritos: controls, paquetesFavoritos: paquetes, compra: compraControls, historial }
+  const context: CompradorContext = { favoritos: controls, paquetesFavoritos: paquetes, compra: compraControls, historial, valoracionesApi }
 
   return <>
     <Outlet context={context} />
