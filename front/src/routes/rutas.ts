@@ -4,8 +4,10 @@ export const rutas = {
   favoritos: '/favoritos',
   compras: '/compras',
   admin: '/admin',
+  agencia: '/agencia',
   login: '/login',
   registro: '/registro',
+  registroAgencia: '/registro-agencia',
   paquete: (id: number) => `/paquetes/${id}`,
 } as const
 
@@ -20,5 +22,5 @@ export function destinoTrasLogin(state: unknown): string {
 }
 
 export function esRutaDeVisitante(path: string): boolean {
-  return path === rutas.login || path === rutas.registro
+  return path === rutas.login || path === rutas.registro || path === rutas.registroAgencia
 }

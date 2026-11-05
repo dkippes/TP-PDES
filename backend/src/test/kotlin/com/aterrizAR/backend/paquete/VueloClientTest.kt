@@ -10,10 +10,11 @@ import org.springframework.test.web.client.response.MockRestResponseCreators.wit
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestTemplate
 import java.time.LocalDate
+import java.time.LocalTime
 
 class VueloClientTest {
     @Test
-    fun `flight catalog maps service ids routes dates and availability ignoring unused fields`() {
+    fun `flight catalog maps service ids routes dates and availability with airline and time`() {
         val restTemplate = RestTemplate()
         val server = MockRestServiceServer.bindTo(restTemplate).build()
         server.expect(requestTo("http://flying-service:8081/vuelos"))
@@ -25,7 +26,7 @@ class VueloClientTest {
 
         val client = VueloClient(restTemplate, "http://flying-service:8081")
 
-        assertEquals(listOf(VueloCatalogoDTO(42, "Buenos Aires", "Córdoba", LocalDate.of(2026, 11, 1), 20)), client.findAll())
+        assertEquals(listOf(VueloCatalogoDTO(42, "Buenos Aires", "Córdoba", LocalDate.of(2026, 11, 1), 20, "Demo", LocalTime.of(7, 30))), client.findAll())
         server.verify()
     }
 

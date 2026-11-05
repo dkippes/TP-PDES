@@ -24,6 +24,7 @@ export function Navbar({ user, onLogout, busy }: Readonly<NavbarProps>) {
           <button className={linkClass} type="button" aria-current={current(rutas.inicio)} onClick={() => navigate(rutas.inicio)}>Inicio</button>
           {user?.role === 'COMPRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.favoritos)} onClick={() => navigate(rutas.favoritos)} disabled={busy}>Mis favoritos</button>}
           {user?.role === 'COMPRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.compras)} onClick={() => navigate(rutas.compras)} disabled={busy}>Mis compras</button>}
+          {user?.role === 'AGENTE' && <button className={linkClass} type="button" aria-current={current(rutas.agencia)} onClick={() => navigate(rutas.agencia)} disabled={busy}>Mi agencia</button>}
           {user?.role === 'ADMINISTRADOR' && <button className={linkClass} type="button" aria-current={current(rutas.admin)} onClick={() => navigate(rutas.admin)} disabled={busy}>Administración</button>}
           <SessionActions user={user} busy={busy} onLogin={() => navigate(rutas.login)} onRegister={() => navigate(rutas.registro)} onLogout={onLogout} />
         </div>

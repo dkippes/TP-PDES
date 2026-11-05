@@ -26,11 +26,17 @@ type Registro = {
   password: string
 }
 
+export type RegistroAgencia = {
+  usuario: Registro
+  agencia: { nombre: string; email: string }
+}
+
 async function post<T>(path: string, body?: object): Promise<T> {
   return readJson<T>(await sendJson('POST', `auth/${path}`, body))
 }
 
 export const registrarUsuario = (datos: Registro) => post<UsuarioAutenticado>('register', datos)
+export const registrarAgencia = (datos: RegistroAgencia) => post<UsuarioAutenticado>('register-agencia', datos)
 export const iniciarSesion = (correo: string, password: string) => post<SesionAutenticada>('login', { correo, password })
 export const renovarSesion = () => post<SesionAutenticada>('refresh')
 export const cerrarSesion = () => post<void>('logout')
