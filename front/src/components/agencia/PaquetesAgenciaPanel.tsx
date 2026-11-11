@@ -21,7 +21,7 @@ export function PaquetesAgenciaPanel({ api, agenciaId }: Readonly<Props>) {
           ? <p className="rounded-lg bg-slate-50 p-8 text-center text-sm text-slate-500">Todavía no publicaste ningún paquete.</p>
           : <>
             <p className="mb-3 text-xs text-slate-500">{totalElementos} {totalElementos === 1 ? 'paquete' : 'paquetes'}</p>
-            <PaquetesAgenciaTable paquetes={contenido} onEdit={panel.openEditor} onDelete={panel.requestDelete} />
+            <PaquetesAgenciaTable paquetes={contenido} comprasPorPaquete={panel.comprasPorPaquete} onEdit={panel.openEditor} onDelete={panel.requestDelete} />
             <div className="mt-6"><Paginacion pagina={panel.pagina} totalPaginas={totalPaginas} onChange={panel.setPagina} /></div>
           </>}
       </AdminPanelContent>

@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { AgenciaApi } from '../../api/agencia'
-import type { PaqueteGestionDTO } from '../../types/agencia'
+import type { PaqueteGestionDTO, VentaDTO } from '../../types/agencia'
 import { useRemoteData } from '../useRemoteData'
 
+const sinVentas: VentaDTO[] = []
 const sinPaquetes = { contenido: [] as PaqueteGestionDTO[], pagina: 0, tamanio: 0, totalElementos: 0, totalPaginas: 0 }
 
 export function usePaquetesAgenciaPanel(api: AgenciaApi, agenciaId: number) {
@@ -13,6 +14,14 @@ export function usePaquetesAgenciaPanel(api: AgenciaApi, agenciaId: number) {
   const hoteles = useRemoteData(loadHoteles, [])
   const loadVuelos = useCallback(() => api.vuelos(), [api])
   const vuelos = useRemoteData(loadVuelos, [])
+  // Purchases per package: a package that was bought cannot be edited or deleted. If the sales do not load the backend still refuses.
+  const loadVentas = useCallback(() => api.ventas(), [api])
+  const ventas = useRemoteData(loadVentas, sinVentas)
+  const comprasPorPaquete = useMemo(() => {
+    const cantidades = new Map<number, number>()
+    for (const venta of ventas.data) cantidades.set(venta.paqueteId, (cantidades.get(venta.paqueteId) ?? 0) + 1)
+    return cantidades
+  }, [ventas.data])
   const [editor, setEditor] = useState<{ paquete: PaqueteGestionDTO | null } | null>(null)
   const [deleting, setDeleting] = useState<PaqueteGestionDTO | null>(null)
   const [message, setMessage] = useState('')
@@ -42,7 +51,7 @@ export function usePaquetesAgenciaPanel(api: AgenciaApi, agenciaId: number) {
   }
 
   return {
-    ...remote, pagina, setPagina, hoteles, vuelos, editor, deleting, message, openEditor, requestDelete,
+    ...remote, pagina, setPagina, hoteles, vuelos, comprasPorPaquete, editor, deleting, message, openEditor, requestDelete,
     closeEditor: () => setEditor(null), closeDelete: () => setDeleting(null), saved, deleteSelected,
   }
 }

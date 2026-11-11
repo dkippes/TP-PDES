@@ -9,6 +9,8 @@ import java.util.UUID
 interface CompraRepository : JpaRepository<Compra, Long> {
     fun findByOperacionId(operacionId: UUID): Compra?
 
+    fun existsByPaqueteId(paqueteId: Long): Boolean
+
     @Query("""
         SELECT c FROM Compra c JOIN FETCH c.paquete p JOIN FETCH p.hotel JOIN FETCH p.agencia
         WHERE c.comprador.id = :compradorId ORDER BY c.fecha DESC, c.id DESC

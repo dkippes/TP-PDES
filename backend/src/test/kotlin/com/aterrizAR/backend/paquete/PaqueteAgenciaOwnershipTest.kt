@@ -142,4 +142,29 @@ class PaqueteAgenciaOwnershipTest {
         comoAgente(delete("/api/paquetes/${libre.id}")).andExpect(status().isNoContent)
         assertEquals(1, paqueteRepository.count())
     }
+
+    private fun comprar(paquete: Paquete) = compraRepository.save(Compra(
+        operacionId = UUID.randomUUID(), precio = paquete.precio, fecha = LocalDate.now(), paquete = paquete, agencia = propia,
+        comprador = usuario("own-comprador-${UUID.randomUUID()}@example.com", Comprador()).perfil as Comprador,
+    ))
+
+    @Test
+    fun `an agent edits a package nobody bought`() {
+        val libre = paquete(propia)
+        expectDisponibilidad()
+
+        comoAgente(put("/api/paquetes/${libre.id}").contentType(MediaType.APPLICATION_JSON).content(json(propia).replace("1500.0", "1800.0")))
+            .andExpect(status().isOk)
+        assertEquals(1800f, paqueteRepository.findById(libre.id!!).get().precio)
+    }
+
+    @Test
+    fun `a package with purchases cannot be edited and keeps its data`() {
+        val vendido = paquete(propia)
+        comprar(vendido)
+
+        comoAgente(put("/api/paquetes/${vendido.id}").contentType(MediaType.APPLICATION_JSON).content(json(propia).replace("1500.0", "1800.0")))
+            .andExpect(status().isConflict)
+        assertEquals(1500f, paqueteRepository.findById(vendido.id!!).get().precio)
+    }
 }

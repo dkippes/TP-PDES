@@ -159,6 +159,49 @@ test('an agent manages its packages from Mi agencia', async (t) => {
   }])
   await expect(page.getByRole('status')).toHaveText('Paquete creado.')
   await expect(page.getByRole('row', { name: /Rosario → Salta/ })).toBeVisible()
+  await expect(page.getByRole('row', { name: /Rosario → Salta/ }).getByRole('button', { name: 'Editar paquete a Salta' })).toBeEnabled()
+})
+
+test('the actions header explains with a tooltip why packages with purchases cannot be edited or deleted', async (t) => {
+  const { page } = await openPage(t, { signedIn: true })
+  await page.goto('/agencia')
+  const fila = page.getByRole('row', { name: /Buenos Aires → Bariloche/ })
+  const editar = fila.getByRole('button', { name: 'Editar paquete a Bariloche' })
+  const eliminar = fila.getByRole('button', { name: 'Eliminar paquete a Bariloche' })
+  const info = page.getByRole('button', { name: 'Más información sobre las acciones' })
+  const regla = 'Los paquetes con compras registradas no se pueden editar ni eliminar'
+
+  await expect(editar).toBeDisabled()
+  await expect(eliminar).toBeDisabled()
+  await expect(editar).toHaveAccessibleName(/no disponible: ya tiene compras/)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await info.hover()
+  await expect(page.getByRole('tooltip')).toContainText(regla)
+  // The whole message fits in its box and on screen, wherever the header sits.
+  const entra = async () => {
+    const caja = await page.getByRole('tooltip').boundingBox()
+    const { ancho, alto } = await page.evaluate(() => ({ ancho: innerWidth, alto: innerHeight }))
+    const desborda = await page.getByRole('tooltip').evaluate((el) => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight)
+    assert.equal(desborda, false, 'the text overflows the tooltip box')
+    assert.ok(caja.x >= 0 && caja.y >= 0 && caja.x + caja.width <= ancho && caja.y + caja.height <= alto, 'the tooltip is inside the viewport')
+  }
+  await entra()
+  for (const tamano of [{ width: 360, height: 640 }, { width: 1280, height: 300 }]) {
+    await page.setViewportSize(tamano)
+    await info.hover()
+    await entra()
+  }
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.mouse.move(0, 0)
+  await expect(page.getByRole('tooltip')).toBeHidden()
+  // Keyboard users get it too, and the icon describes itself with it.
+  await info.focus()
+  await expect(page.getByRole('tooltip')).toBeVisible()
+  await expect(info).toHaveAccessibleDescription(new RegExp(regla))
+  // The inert actions open nothing.
+  await editar.click({ force: true })
+  await eliminar.click({ force: true })
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('an agent consults its sales and clients', async (t) => {

@@ -87,7 +87,7 @@ class PaqueteController(
             ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE; el AGENTE solo en paquetes de su agencia"),
             ApiResponse(responseCode = "400", description = "Datos inválidos, hotel/agencia inexistente o vuelo sin disponibilidad"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
-            ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
+            ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico o el paquete tiene compras registradas"),
         ],
     )
     fun update(
