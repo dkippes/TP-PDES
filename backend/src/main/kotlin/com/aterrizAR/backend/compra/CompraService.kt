@@ -2,6 +2,8 @@ package com.aterrizAR.backend.compra
 
 import com.aterrizAR.backend.model.Compra
 import com.aterrizAR.backend.model.Comprador
+import com.aterrizAR.backend.observability.NegocioMetrics
+import com.aterrizAR.backend.observability.ResultadoCompra
 import com.aterrizAR.backend.paquete.PaqueteRepository
 import com.aterrizAR.backend.paquete.ResultadoVentaVuelos
 import com.aterrizAR.backend.paquete.VueloClient
@@ -9,6 +11,7 @@ import com.aterrizAR.backend.security.SoloComprador
 import com.aterrizAR.backend.security.UsuarioAutenticado
 import com.aterrizAR.backend.usuario.UsuarioRepository
 import com.aterrizAR.backend.usuario.comoComprador
+import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -25,7 +28,10 @@ class CompraService(
     private val usuarioRepository: UsuarioRepository,
     private val paqueteRepository: PaqueteRepository,
     private val vueloClient: VueloClient,
+    private val metrics: NegocioMetrics,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional(readOnly = true)
     fun listar(autenticado: UsuarioAutenticado): List<Compra> {
         val comprador = usuarioRepository.findByIdOrNull(autenticado.id).comoComprador("ver compras")
@@ -42,16 +48,22 @@ class CompraService(
         val operacionId = requireNotNull(request.operacionId)
         // Serializa las compras de la misma cuenta: un reintento concurrente encuentra la compra ya guardada.
         val comprador = usuarioRepository.findByIdForUpdate(autenticado.id).comoComprador("comprar paquetes")
-        compraRepository.findByOperacionId(operacionId)?.let { return repetir(it, paqueteId, comprador) }
+        compraRepository.findByOperacionId(operacionId)?.let { return repetir(it, paqueteId, comprador, autenticado) }
 
         val paquete = paqueteRepository.findByIdOrNull(paqueteId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Paquete $paqueteId no encontrado")
         when (vueloClient.vender(operacionId, listOf(paquete.vueloIdaId, paquete.vueloVueltaId))) {
             ResultadoVentaVuelos.VENDIDA -> Unit
-            ResultadoVentaVuelos.RECHAZADA ->
+            ResultadoVentaVuelos.RECHAZADA -> {
+                metrics.compra(ResultadoCompra.RECHAZADA)
+                log.warn("Compra rechazada: vuelos no disponibles paqueteId={} usuarioId={}", paqueteId, autenticado.id)
                 throw ResponseStatusException(HttpStatus.CONFLICT, "Los vuelos del paquete $paqueteId no están disponibles")
-            ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE ->
+            }
+            ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE -> {
+                metrics.compra(ResultadoCompra.SERVICIO_NO_DISPONIBLE)
+                log.error("Compra fallida: flying-service no disponible paqueteId={} usuarioId={}", paqueteId, autenticado.id)
                 throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "El servicio de vuelos no está disponible")
+            }
         }
 
         val compra = Compra(
@@ -63,20 +75,28 @@ class CompraService(
             comprador = comprador,
         )
         return try {
-            CompraRegistrada(compraRepository.saveAndFlush(compra), nueva = true)
+            CompraRegistrada(compraRepository.saveAndFlush(compra), nueva = true).also {
+                metrics.compra(ResultadoCompra.EXITOSA, compra.precio)
+                log.info("Compra exitosa: compraId={} paqueteId={} usuarioId={} precio={}", it.compra.id, paqueteId, autenticado.id, compra.precio)
+            }
         } catch (exception: DataIntegrityViolationException) {
             // Otro comprador registró la misma operación entre la búsqueda y el guardado.
             throw operacionEnUso(operacionId, exception)
         }
     }
 
-    private fun repetir(compra: Compra, paqueteId: Long, comprador: Comprador): CompraRegistrada {
+    private fun repetir(compra: Compra, paqueteId: Long, comprador: Comprador, autenticado: UsuarioAutenticado): CompraRegistrada {
         if (compra.comprador.id != comprador.id || compra.paquete.id != paqueteId) throw operacionEnUso(compra.operacionId)
+        metrics.compra(ResultadoCompra.REPETIDA)
+        log.info("Compra repetida (idempotente): compraId={} usuarioId={}", compra.id, autenticado.id)
         return CompraRegistrada(compra, nueva = false)
     }
 
-    private fun operacionEnUso(operacionId: UUID, cause: Throwable? = null) =
-        ResponseStatusException(HttpStatus.CONFLICT, "La operación $operacionId pertenece a otra compra", cause)
+    private fun operacionEnUso(operacionId: UUID, cause: Throwable? = null): ResponseStatusException {
+        metrics.compra(ResultadoCompra.OPERACION_EN_USO)
+        log.warn("Compra rechazada: operacionId={} pertenece a otra compra", operacionId)
+        return ResponseStatusException(HttpStatus.CONFLICT, "La operación $operacionId pertenece a otra compra", cause)
+    }
 }
 
 data class CompraRegistrada(val compra: Compra, val nueva: Boolean)

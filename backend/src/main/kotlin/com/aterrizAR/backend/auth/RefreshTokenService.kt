@@ -1,6 +1,7 @@
 package com.aterrizAR.backend.auth
 
 import com.aterrizAR.backend.model.Usuario
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +20,7 @@ class RefreshTokenService(
 ) {
     private val expiration = Duration.ofMillis(expirationMs)
     private val secureRandom = SecureRandom()
+    private val log = LoggerFactory.getLogger(javaClass)
 
     init {
         require(!expiration.isNegative && !expiration.isZero) { "Refresh token expiration must be positive" }
@@ -30,14 +32,20 @@ class RefreshTokenService(
     @Transactional
     fun rotate(rawToken: String): RefreshTokenRotation {
         val now = Instant.now()
-        val current = refreshTokenRepository.findByTokenHash(hash(rawToken)) ?: throw InvalidRefreshTokenException()
+        val current = refreshTokenRepository.findByTokenHash(hash(rawToken)) ?: run {
+            log.warn("Refresh token desconocido")
+            throw InvalidRefreshTokenException()
+        }
 
         if (current.revokedAt != null) {
             refreshTokenRepository.revokeActiveByFamilyId(current.familyId, now)
+            // A rotated token being replayed suggests theft: the whole session family was revoked above.
+            log.warn("Refresh token reutilizado: sesión revocada familyId={} usuarioId={}", current.familyId, current.usuario.id)
             throw InvalidRefreshTokenException()
         }
         if (!current.expiresAt.isAfter(now)) {
             current.revoke(now)
+            log.info("Refresh token expirado: usuarioId={}", current.usuario.id)
             throw InvalidRefreshTokenException()
         }
 

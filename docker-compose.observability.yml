@@ -1,0 +1,68 @@
+# Observability stack (Grafana + Prometheus + Loki + Alloy). Use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch
+# Grafana: http://localhost:3000 (anonymous admin in dev; datasources provisioned).
+services:
+  backend:
+    environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+  flying-service:
+    environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: aterrizar-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: aterrizar-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./observability/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks:
+      - app-network
+  alloy:
+    image: grafana/alloy:v1.10.0
+    container_name: aterrizar-alloy
+    restart: unless-stopped
+    command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - ./observability/alloy.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    networks:
+      - app-network
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: aterrizar-grafana
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    ports:
+      - "${GRAFANA_PORT:-3005}:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - app-network
+volumes:
+  prometheus-data:
+    name: aterrizar-prometheus-data
+  loki-data:
+    name: aterrizar-loki-data
+  grafana-data:
+    name: aterrizar-grafana-data

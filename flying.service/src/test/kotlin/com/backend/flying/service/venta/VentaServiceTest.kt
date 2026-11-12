@@ -2,6 +2,7 @@ package com.backend.flying.service.venta
 
 import com.backend.flying.service.vuelo.Vuelo
 import com.backend.flying.service.vuelo.VueloRepository
+import io.micrometer.core.instrument.MeterRegistry
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -29,6 +30,9 @@ class VentaServiceTest {
 
     @Autowired
     lateinit var vueloRepository: VueloRepository
+
+    @Autowired
+    lateinit var registry: MeterRegistry
 
     @AfterEach
     fun cleanUp() {
@@ -130,5 +134,27 @@ class VentaServiceTest {
         assertStatus(HttpStatus.BAD_REQUEST) { ventaService.vender(VentaRequestDTO(UUID.randomUUID(), listOf(0L))) }
 
         assertEquals(10, disponibilidad(ida))
+    }
+
+    private fun ventas(resultado: String) = registry.get("aterrizar.ventas.vuelos").tag("resultado", resultado).counter().count()
+
+    @Test
+    fun `vender counts sales by outcome and the seats sold`() {
+        val exitosas = ventas("exitosa")
+        val repetidas = ventas("repetida")
+        val sinDisponibilidad = ventas("sin_disponibilidad")
+        val asientos = registry.get("aterrizar.asientos.vendidos").counter().count()
+        val ida = vuelo(disponibilidad = 1)
+        val vuelta = vuelo(disponibilidad = 1)
+        val operacionId = UUID.randomUUID()
+
+        ventaService.vender(VentaRequestDTO(operacionId, listOf(ida, vuelta)))
+        ventaService.vender(VentaRequestDTO(operacionId, listOf(ida, vuelta)))
+        assertStatus(HttpStatus.CONFLICT) { ventaService.vender(VentaRequestDTO(UUID.randomUUID(), listOf(ida))) }
+
+        assertEquals(exitosas + 1, ventas("exitosa"))
+        assertEquals(repetidas + 1, ventas("repetida"))
+        assertEquals(sinDisponibilidad + 1, ventas("sin_disponibilidad"))
+        assertEquals(asientos + 2, registry.get("aterrizar.asientos.vendidos").counter().count())
     }
 }

@@ -1,5 +1,6 @@
 package com.aterrizAR.backend.paquete
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.client.HttpClientErrorException
@@ -17,6 +18,8 @@ class VueloClient(
     private val restTemplate: RestTemplate,
     @Value("\${flying.service.url:http://flying-service:8081}") private val flyingServiceUrl: String,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun findAll(): List<VueloCatalogoDTO> =
         restTemplate.getForObject("$flyingServiceUrl/vuelos", Array<VueloCatalogoDTO>::class.java)?.toList().orEmpty()
 
@@ -52,8 +55,12 @@ class VueloClient(
         } catch (e: HttpClientErrorException) {
             // Only a missing flight or a lack of seats is a rejection; other client errors are integration failures.
             if (e is HttpClientErrorException.NotFound || e is HttpClientErrorException.Conflict) ResultadoVentaVuelos.RECHAZADA
-            else ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE
+            else {
+                log.error("flying-service respondió {} al vender vuelos", e.statusCode.value())
+                ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE
+            }
         } catch (e: RestClientException) {
+            log.error("flying-service inaccesible al vender vuelos: {}", e.javaClass.simpleName)
             ResultadoVentaVuelos.SERVICIO_NO_DISPONIBLE
         }
 }
