@@ -54,7 +54,7 @@ class UsuarioController(private val usuarioService: UsuarioService) {
     @PutMapping("/me")
     @Operation(
         summary = "Actualiza los datos personales del usuario autenticado",
-        description = "Solo nombre, apellido y dirección; el rol y el correo los gestiona un administrador",
+        description = "Solo nombre, apellido y dirección; el correo lo gestiona un administrador y el rol no se puede cambiar",
     )
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Datos actualizados"),
@@ -104,8 +104,9 @@ class UsuarioController(private val usuarioService: UsuarioService) {
     @PutMapping("/{id}")
     @Operation(
         summary = "Actualiza un usuario",
-        description = "Permite cambiar el rol y resetear la contraseña (password opcional). " +
-            "Cambiar rol o contraseña revoca las sesiones renovables del usuario.",
+        description = "Conserva el rol asignado al crear el usuario; rol debe coincidir con el actual. " +
+            "Permite cambiar la agencia de un AGENTE y resetear la contraseña (password opcional). " +
+            "Cambiar la contraseña revoca las sesiones renovables del usuario.",
     )
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Usuario actualizado"),
@@ -113,14 +114,13 @@ class UsuarioController(private val usuarioService: UsuarioService) {
         ApiResponse(responseCode = "404", description = "Usuario o agencia no encontrados"),
         ApiResponse(
             responseCode = "409",
-            description = "Correo duplicado, el administrador intenta quitarse su propio rol o el perfil anterior tiene compras o valoraciones",
+            description = "Correo duplicado o intento de cambiar el rol del usuario",
         ),
     ])
     fun update(
         @PathVariable id: Long,
         @Valid @RequestBody request: UsuarioUpdateRequestDTO,
-        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt,
-    ): UsuarioResponseDTO = usuarioService.update(id, request, UsuarioAutenticado.from(jwt)).toDTO()
+    ): UsuarioResponseDTO = usuarioService.update(id, request).toDTO()
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

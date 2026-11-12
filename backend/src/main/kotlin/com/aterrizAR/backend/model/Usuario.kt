@@ -25,7 +25,7 @@ class Usuario(
     var direccion: String,
     @Column(nullable = false, name = "password_hash")
     var passwordHash: String,
-    // El perfil pertenece al usuario: cambiar de rol reemplaza el perfil y el anterior se elimina.
+    // El perfil pertenece al usuario y se elimina junto con él.
     @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true, optional = false)
     @JoinColumn(name = "perfil_id", nullable = false, unique = true)
     var perfil: Perfil,

@@ -10,7 +10,7 @@ import { UsuariosTable } from './UsuariosTable'
 export function UsuariosPanel(props: UsuariosPanelOptions) {
   const panel = useUsuariosPanel(props)
 
-  return <AdminPanel titleId="usuarios-title" title="Usuarios" description="Administrá las cuentas, sus roles y las agencias asociadas."
+  return <AdminPanel titleId="usuarios-title" title="Usuarios" description="Administrá las cuentas y las agencias asociadas."
     actionLabel="Nuevo usuario" onCreate={() => panel.openEditor(null)} createDisabled={panel.loading || !!panel.error}>
     <UsuariosFilters search={panel.search} onSearchChange={panel.setSearch} rol={panel.rol} onRolChange={panel.setRol} />
     <AdminPanelContent loading={panel.loading} loadingMessage="Cargando usuarios..." error={panel.error} message={panel.message} onRetry={panel.reload}>
@@ -21,7 +21,7 @@ export function UsuariosPanel(props: UsuariosPanelOptions) {
           onView={panel.openDetail} onEdit={panel.openEditor} onDelete={panel.requestDelete} />}
     </AdminPanelContent>
     {panel.editor && <UsuarioForm api={props.api} usuario={panel.editor.usuario} agencias={panel.data.agencias}
-      currentUserId={props.currentUserId} onSaved={panel.saved} onClose={panel.closeEditor} />}
+      onSaved={panel.saved} onClose={panel.closeEditor} />}
     {panel.detail && <UsuarioDetail usuario={panel.detail} nombreAgencia={panel.nombreAgencia(panel.detail.agenciaId)} onClose={panel.closeDetail} />}
     {panel.deleting && <DeleteConfirmation title="Eliminar usuario"
       description={`¿Querés eliminar a ${panel.deleting.nombre} ${panel.deleting.apellido}? Esta acción es permanente. Si tiene referencias que impiden la baja, se conservará su cuenta.`}

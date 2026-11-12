@@ -8,7 +8,7 @@ import jakarta.persistence.ManyToOne
 class Agente(
     @ManyToOne(optional = false)
     @JoinColumn(name = "agencia_id", nullable = false)
-    val agencia: Agencia,
+    var agencia: Agencia,
 ) : Perfil() {
     override val roleName: String
         get() = Roles.AGENTE

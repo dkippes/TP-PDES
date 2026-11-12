@@ -211,15 +211,18 @@ class FavoritoControllerTest {
     }
 
     @Test
-    fun `changing buyer role clears favorites and a stale buyer token loses access`() {
+    fun `changing buyer role is rejected and preserves favorites and buyer access`() {
         perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent)
         val body = """{"nombre":"Test","apellido":"User","correo":"${comprador.correo}","direccion":"Quilmes","rol":"ADMINISTRADOR"}"""
         perform(put("/api/usuarios/${comprador.id}").contentType(MediaType.APPLICATION_JSON).content(body), admin)
+            .andExpect(status().isConflict)
+        assertEquals(1, favoritoRepository.count())
+        mockServer.expectDisponibilidades(1L to 9, 2L to 3)
+        perform(get("/api/favoritos"))
             .andExpect(status().isOk)
-        assertEquals(0, favoritoRepository.count())
-        perform(get("/api/favoritos")).andExpect(status().isForbidden)
-        perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isForbidden)
-        perform(delete("/api/favoritos/${paquete.id}")).andExpect(status().isForbidden)
+            .andExpect(jsonPath("$[0].paquete.id").value(paquete.id!!))
+        perform(put("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent)
+        perform(delete("/api/favoritos/${paquete.id}")).andExpect(status().isNoContent)
     }
 
     @Test

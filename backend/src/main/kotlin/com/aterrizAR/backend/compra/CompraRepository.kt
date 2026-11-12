@@ -1,6 +1,10 @@
 package com.aterrizAR.backend.compra
 
 import com.aterrizAR.backend.model.Compra
+import com.aterrizAR.backend.reporte.AgenciaVentasDTO
+import com.aterrizAR.backend.reporte.DestinoVentasDTO
+import com.aterrizAR.backend.reporte.UsuarioComprasDTO
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -28,4 +32,28 @@ interface CompraRepository : JpaRepository<Compra, Long> {
         ORDER BY c.fecha DESC, c.id DESC
     """)
     fun findVentasDeLaAgencia(@Param("agenciaId") agenciaId: Long): List<VentaResponseDTO>
+
+    @Query("""
+        SELECT new com.aterrizAR.backend.reporte.UsuarioComprasDTO(u.id, u.nombre, u.apellido, COUNT(c.id))
+        FROM Compra c JOIN Usuario u ON u.perfil.id = c.comprador.id
+        GROUP BY u.id, u.nombre, u.apellido
+        ORDER BY COUNT(c.id) DESC, u.id ASC
+    """)
+    fun findUsuariosConMasCompras(pageable: Pageable): List<UsuarioComprasDTO>
+
+    @Query("""
+        SELECT new com.aterrizAR.backend.reporte.AgenciaVentasDTO(a.id, a.nombre, COUNT(c.id))
+        FROM Compra c JOIN c.agencia a
+        GROUP BY a.id, a.nombre
+        ORDER BY COUNT(c.id) DESC, a.id ASC
+    """)
+    fun findAgenciasConMasVentas(pageable: Pageable): List<AgenciaVentasDTO>
+
+    @Query("""
+        SELECT new com.aterrizAR.backend.reporte.DestinoVentasDTO(MIN(TRIM(p.destino)), COUNT(c.id))
+        FROM Compra c JOIN c.paquete p
+        GROUP BY LOWER(TRIM(p.destino))
+        ORDER BY COUNT(c.id) DESC, LOWER(TRIM(p.destino)) ASC
+    """)
+    fun findDestinosMasVendidos(pageable: Pageable): List<DestinoVentasDTO>
 }

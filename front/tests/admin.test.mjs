@@ -14,7 +14,7 @@ test('user and agency CRUD sends signed requests with the backend field names an
   })
   const client = api()
   const usuario = { nombre: 'Ana', apellido: 'Pérez', correo: 'ana@example.com', direccion: 'Quilmes', rol: 'AGENTE', agenciaId: 2, password: '12345678' }
-  const { password: _password, ...updated } = { ...usuario, rol: 'COMPRADOR', agenciaId: null }
+  const { password: _password, ...updated } = { ...usuario, nombre: 'Ana María', agenciaId: 3 }
   const agencia = { nombre: 'Viajes', email: 'viajes@example.com' }
   await client.usuarios.listar()
   await client.usuarios.crear(usuario)
@@ -36,6 +36,25 @@ test('user and agency CRUD sends signed requests with the backend field names an
   assert.deepEqual(JSON.parse(requests[2].body), updated)
   assert.equal('password' in JSON.parse(requests[2].body), false)
   assert.deepEqual(JSON.parse(requests[5].body), agencia)
+})
+
+test('admin reports use a signed GET and preserve the four backend rankings', async (t) => {
+  const reportes = {
+    usuariosConMasCompras: [{ usuarioId: 7, nombre: 'Ana', apellido: 'Pérez', totalCompras: 6 }],
+    destinosMejorRankeados: [{ destino: 'Salta', promedio: 8.5, totalValoraciones: 2 }],
+    agenciasConMasVentas: [{ agenciaId: 8, nombre: 'Viajes', totalVentas: 6 }],
+    destinosMasVendidos: [{ destino: 'Bariloche', totalVentas: 4 }],
+  }
+  const fetch = t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/admin/reportes')
+    assert.equal(options.method, 'GET')
+    assert.equal(options.headers.Authorization, 'Bearer original')
+    assert.equal(options.credentials, 'include')
+    return json(reportes)
+  })
+
+  assert.deepEqual(await api().reportes.obtener(), reportes)
+  assert.equal(fetch.mock.callCount(), 1)
 })
 
 test('concurrent expired requests share one refresh and retry with the renewed access token', async (t) => {
