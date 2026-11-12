@@ -57,6 +57,9 @@ class CompraControllerTest {
     @Autowired lateinit var agenciaRepository: AgenciaRepository
     @Autowired lateinit var refreshTokenRepository: RefreshTokenRepository
     @Autowired lateinit var jdbc: JdbcTemplate
+    @Autowired lateinit var meterRegistry: io.micrometer.core.instrument.MeterRegistry
+
+    private fun compras(resultado: String) = meterRegistry.get("aterrizar.compras").tag("resultado", resultado).counter().count()
 
     private lateinit var mockServer: MockRestServiceServer
     private lateinit var comprador: Usuario
@@ -112,6 +115,8 @@ class CompraControllerTest {
 
     @Test
     fun `a buyer purchases a package at the current price and its two flights are sold`() {
+        val exitosas = compras("exitosa")
+        val monto = meterRegistry.get("aterrizar.compras.monto").counter().count()
         val operacionId = UUID.randomUUID()
         expectVenta(operacionId, listOf(11, 12))
             .andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(ventaJson(operacionId, listOf(11, 12))))
@@ -133,10 +138,13 @@ class CompraControllerTest {
         assertEquals(operacionId, compra.operacionId)
         assertEquals(agencia.id, compra.agencia.id)
         assertEquals(comprador.perfil.id, compra.comprador.id)
+        assertEquals(exitosas + 1, compras("exitosa"))
+        assertEquals(monto + 1500.0, meterRegistry.get("aterrizar.compras.monto").counter().count())
     }
 
     @Test
     fun `repeating an operation returns the original purchase without selling again`() {
+        val repetidas = compras("repetida")
         val operacionId = UUID.randomUUID()
         expectVenta(operacionId, listOf(11, 12))
             .andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(ventaJson(operacionId, listOf(11, 12))))
@@ -148,6 +156,7 @@ class CompraControllerTest {
             .andExpect(jsonPath("$.id").value(id!!))
         mockServer.verify()
         assertEquals(1, compraRepository.count())
+        assertEquals(repetidas + 1, compras("repetida"))
     }
 
     @Test
@@ -176,6 +185,8 @@ class CompraControllerTest {
 
     @Test
     fun `flight rejections and an unavailable flying service do not store a purchase`() {
+        val rechazadas = compras("rechazada")
+        val noDisponibles = compras("servicio_no_disponible")
         val sinLugar = UUID.randomUUID()
         val vueloInexistente = UUID.randomUUID()
         val caido = UUID.randomUUID()
@@ -193,6 +204,8 @@ class CompraControllerTest {
 
         mockServer.verify()
         assertEquals(0, compraRepository.count())
+        assertEquals(rechazadas + 2, compras("rechazada"))
+        assertEquals(noDisponibles + 2, compras("servicio_no_disponible"))
     }
 
     @Test

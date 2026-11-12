@@ -7,6 +7,7 @@ import com.nimbusds.jose.proc.SecurityContext
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -48,6 +49,8 @@ class SecurityConfig(
     private val objectMapper: ObjectMapper,
     private val endpointRoleRules: List<EndpointRoleRule>,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http
         .csrf { it.disable() }
@@ -66,6 +69,8 @@ class SecurityConfig(
             it.requestMatchers(
                 HttpMethod.GET,
                 "/api/health",
+                "/actuator/health",
+                "/actuator/prometheus",
                 "/api/paquetes",
                 "/api/paquetes/buscar",
                 "/api/paquetes/{id}",
@@ -133,7 +138,8 @@ class SecurityConfig(
         }
 
     private fun accessDeniedHandler(): AccessDeniedHandler =
-        AccessDeniedHandler { _: HttpServletRequest, response: HttpServletResponse, _ ->
+        AccessDeniedHandler { request: HttpServletRequest, response: HttpServletResponse, _ ->
+            log.warn("Acceso denegado: {} {}", request.method, request.requestURI)
             writeError(response, HttpStatus.FORBIDDEN, "Access is denied")
         }
 
