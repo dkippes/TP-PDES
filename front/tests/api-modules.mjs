@@ -28,3 +28,7 @@ export const { createFavoritosApi } = await import(await moduleUrl('api/favorito
 export const { createComprasApi } = await import(await moduleUrl('api/compras.ts'))
 export const { createValoracionesApi, createValoracionesPublicasApi } = await import(await moduleUrl('api/valoraciones.ts'))
 export const disponibilidad = await import(await moduleUrl('components/paquetes/disponibilidad.ts'))
+export const { createAgenciaApi } = await import(await moduleUrl('api/agencia.ts'))
+export const { resumirClientes } = await import(await moduleUrl('components/agencia/clientes.ts'))
+export const vuelos = await import(await moduleUrl('components/agencia/vuelos.ts', { '../paquetes/format': await moduleUrl('components/paquetes/format.ts') }))
+export const calendario = await import(await moduleUrl('components/forms/calendario.ts'))

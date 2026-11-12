@@ -1,7 +1,7 @@
-import type { FormEvent, ReactNode } from 'react'
+import type { SubmitEvent, ReactNode } from 'react'
 
 type AuthFormProps = {
-  onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => Promise<void>
   children: ReactNode
   busy: boolean
   error: string

@@ -35,6 +35,18 @@ class AuthController(
     fun register(@Valid @RequestBody request: RegisterRequestDTO): ResponseEntity<PublicUserResponseDTO> =
         ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request))
 
+    @PostMapping("/register-agencia")
+    @Operation(summary = "Register an agency together with its first agent account")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "201", description = "Agency and agent account created"),
+            ApiResponse(responseCode = "400", description = "Invalid request"),
+            ApiResponse(responseCode = "409", description = "User or agency email already registered"),
+        ],
+    )
+    fun registerAgencia(@Valid @RequestBody request: RegisterAgenciaRequestDTO): ResponseEntity<PublicUserResponseDTO> =
+        ResponseEntity.status(HttpStatus.CREATED).body(authService.registerAgencia(request))
+
     @PostMapping("/login")
     @Operation(summary = "Authenticate with email and password")
     @ApiResponses(

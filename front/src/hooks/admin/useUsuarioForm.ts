@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import type { UsuariosApi } from '../../api/admin'
 import type { Rol, UsuarioResponseDTO } from '../../types/admin'
 import { useAsyncAction } from '../useAsyncAction'
@@ -26,7 +26,7 @@ export function useUsuarioForm({ api, usuario, currentUserId, onSaved }: Usuario
     setForm((current) => ({ ...current, [field]: value }))
   }
   const isSelf = usuario?.id === currentUserId
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => {
       const datos = {

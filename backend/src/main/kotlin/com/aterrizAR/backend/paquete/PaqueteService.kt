@@ -5,6 +5,7 @@ import com.aterrizAR.backend.hotel.HotelRepository
 import com.aterrizAR.backend.model.Agencia
 import com.aterrizAR.backend.model.Hotel
 import com.aterrizAR.backend.model.Paquete
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
@@ -77,7 +78,11 @@ class PaqueteService(
 
     fun delete(id: Long) {
         findById(id)
-        paqueteRepository.deleteById(id)
+        try {
+            paqueteRepository.deleteById(id)
+        } catch (exception: DataIntegrityViolationException) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "El paquete $id tiene compras registradas", exception)
+        }
     }
 
     private fun validate(request: PaqueteRequest, excludeId: Long?): Paquete {

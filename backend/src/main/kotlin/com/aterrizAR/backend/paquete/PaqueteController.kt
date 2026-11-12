@@ -5,9 +5,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.Parameter
 import jakarta.validation.Valid
+import com.aterrizAR.backend.security.UsuarioAutenticado
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Paquetes", description = "ABM de paquetes turísticos (2 vuelos + 1 hotel)")
 class PaqueteController(
     private val paqueteService: PaqueteService,
+    private val paqueteAgenciaService: PaqueteAgenciaService,
 ) {
     @GetMapping
     @Operation(summary = "Lista todos los paquetes", description = "Catálogo público, disponible sin iniciar sesión")
@@ -62,12 +67,15 @@ class PaqueteController(
         value = [
             ApiResponse(responseCode = "201", description = "Paquete creado"),
             ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE; el AGENTE solo en paquetes de su agencia"),
             ApiResponse(responseCode = "400", description = "Datos inválidos, hotel/agencia inexistente o vuelo sin disponibilidad"),
             ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
         ],
     )
-    fun create(@Valid @RequestBody request: PaqueteRequest): PaqueteDTO = paqueteService.create(request)
+    fun create(
+        @Valid @RequestBody request: PaqueteRequest,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt,
+    ): PaqueteDTO = paqueteAgenciaService.create(request, UsuarioAutenticado.from(jwt))
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualiza un paquete existente")
@@ -76,14 +84,17 @@ class PaqueteController(
         value = [
             ApiResponse(responseCode = "200", description = "Paquete actualizado"),
             ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE; el AGENTE solo en paquetes de su agencia"),
             ApiResponse(responseCode = "400", description = "Datos inválidos, hotel/agencia inexistente o vuelo sin disponibilidad"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
-            ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico"),
+            ApiResponse(responseCode = "409", description = "La agencia ya tiene un paquete idéntico o el paquete tiene compras registradas"),
         ],
     )
-    fun update(@PathVariable id: Long, @Valid @RequestBody request: PaqueteRequest): PaqueteDTO =
-        paqueteService.update(id, request)
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: PaqueteRequest,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt,
+    ): PaqueteDTO = paqueteAgenciaService.update(id, request, UsuarioAutenticado.from(jwt))
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -93,9 +104,11 @@ class PaqueteController(
         value = [
             ApiResponse(responseCode = "204", description = "Paquete eliminado"),
             ApiResponse(responseCode = "401", description = "JWT ausente o inválido"),
-            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE"),
+            ApiResponse(responseCode = "403", description = "Escritura para ADMINISTRADOR o AGENTE; el AGENTE solo en paquetes de su agencia"),
             ApiResponse(responseCode = "404", description = "Paquete no encontrado"),
+            ApiResponse(responseCode = "409", description = "El paquete tiene compras registradas"),
         ],
     )
-    fun delete(@PathVariable id: Long) = paqueteService.delete(id)
+    fun delete(@PathVariable id: Long, @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt) =
+        paqueteAgenciaService.delete(id, UsuarioAutenticado.from(jwt))
 }

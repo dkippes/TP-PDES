@@ -1,5 +1,6 @@
 package com.aterrizAR.backend.auth
 
+import com.aterrizAR.backend.agencia.AgenciaRepository
 import com.aterrizAR.backend.usuario.UsuarioRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -22,11 +23,13 @@ class AuthControllerTest {
     @Autowired lateinit var mockMvc: MockMvc
     @Autowired lateinit var usuarioRepository: UsuarioRepository
     @Autowired lateinit var refreshTokenRepository: RefreshTokenRepository
+    @Autowired lateinit var agenciaRepository: AgenciaRepository
 
     @AfterEach
     fun cleanUp() {
         refreshTokenRepository.deleteAll()
         usuarioRepository.deleteAll()
+        agenciaRepository.deleteAll()
     }
 
     private fun registerJson(password: String = "password123") = """
@@ -49,6 +52,48 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(registerJson()))
             .andExpect(status().isConflict)
+    }
+
+    private fun registerAgenciaJson(agenciaEmail: String = "sur@example.com") = """
+        {"usuario":{"nombre":"Ana","apellido":"Pérez","correo":"ana@example.com","direccion":"Calle 1","password":"password123"},
+         "agencia":{"nombre":"Viajes Sur","email":"$agenciaEmail"}}
+    """.trimIndent()
+
+    private fun registerAgencia(json: String = registerAgenciaJson()) = mockMvc.perform(
+        post("/api/auth/register-agencia").contentType(MediaType.APPLICATION_JSON).content(json),
+    )
+
+    @Test
+    fun `register-agencia creates the agency with its first agent who can log in`() {
+        registerAgencia().andExpect(status().isCreated)
+            .andExpect(jsonPath("$.role").value("AGENTE"))
+            .andExpect(jsonPath("$.correo").value("ana@example.com"))
+
+        val agencia = agenciaRepository.findByEmail("sur@example.com")
+        assertNotNull(agencia)
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginJson()))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.user.role").value("AGENTE"))
+    }
+
+    @Test
+    fun `register-agencia rejects duplicate emails without leaving partial data`() {
+        registerAgencia().andExpect(status().isCreated)
+
+        registerAgencia(registerAgenciaJson("otra@example.com")).andExpect(status().isConflict)
+        registerAgencia(registerAgenciaJson().replace("ana@example.com", "otra-ana@example.com"))
+            .andExpect(status().isConflict)
+        org.junit.jupiter.api.Assertions.assertEquals(1, agenciaRepository.count())
+        org.junit.jupiter.api.Assertions.assertEquals(1, usuarioRepository.count())
+    }
+
+    @Test
+    fun `register-agencia validates both the user and the agency`() {
+        registerAgencia(registerAgenciaJson("no-es-email")).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.fieldErrors['agencia.email']").exists())
+        registerAgencia(registerAgenciaJson().replace("password123", "short")).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.fieldErrors['usuario.password']").exists())
+        registerAgencia("""{"usuario":{"nombre":"A"}}""").andExpect(status().isBadRequest)
     }
 
     @Test
