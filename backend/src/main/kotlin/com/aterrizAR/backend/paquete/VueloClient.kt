@@ -7,6 +7,7 @@ import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 
 /**
@@ -74,6 +75,8 @@ data class VueloCatalogoDTO(
     val destino: String,
     val fecha: LocalDate,
     val disponibilidad: Int,
+    val aerolinea: String = "",
+    val hora: LocalTime? = null,
 )
 
 data class VueloResponse(

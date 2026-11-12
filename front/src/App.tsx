@@ -9,6 +9,8 @@ import { useSession } from './hooks/useSession'
 import { AdminHomePage } from './pages/AdminHomePage'
 import { CompradorPage } from './pages/CompradorPage'
 import { LoginPage } from './pages/LoginPage'
+import { AgenciaPage } from './pages/AgenciaPage'
+import { RegisterAgenciaPage } from './pages/RegisterAgenciaPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ComprasRoute, FavoritosRoute, InicioRoute, PaqueteRoute, ResultadosRoute } from './routes/CatalogoRoutes'
 import { RequireRole } from './routes/RequireRole'
@@ -71,11 +73,19 @@ function App() {
         <Route path={rutas.admin} element={<RequireRole session={session} role="ADMINISTRADOR">{(admin) =>
           <AdminHomePage session={admin} onSessionRenewed={renewSession} onSessionExpired={expireSession} onCurrentUserUpdated={handleCurrentUserUpdated} />
         }</RequireRole>} />
+        <Route path={rutas.agencia} element={<RequireRole session={session} role="AGENTE">{(agente) =>
+          <AgenciaPage session={agente} onSessionRenewed={renewSession} onSessionExpired={expireSession} />
+        }</RequireRole>} />
         <Route path={rutas.login} element={<SoloVisitantes session={session}>
           <LoginPage onLoggedIn={handleLoggedIn} onRegister={() => navigate(rutas.registro, { state: location.state })} />
         </SoloVisitantes>} />
         <Route path={rutas.registro} element={<SoloVisitantes session={session}>
-          <RegisterPage onRegistered={handleRegistered} onLogin={() => navigate(rutas.login, { state: location.state })} />
+          <RegisterPage onRegistered={handleRegistered} onLogin={() => navigate(rutas.login, { state: location.state })}
+            onRegisterAgencia={() => navigate(rutas.registroAgencia, { state: location.state })} />
+        </SoloVisitantes>} />
+        <Route path={rutas.registroAgencia} element={<SoloVisitantes session={session}>
+          <RegisterAgenciaPage onRegistered={handleRegistered} onLogin={() => navigate(rutas.login, { state: location.state })}
+            onRegisterBuyer={() => navigate(rutas.registro, { state: location.state })} />
         </SoloVisitantes>} />
         <Route path="*" element={<Navigate to={rutas.inicio} replace />} />
       </Route>

@@ -1,8 +1,10 @@
 package com.aterrizAR.backend.auth
 
+import com.aterrizAR.backend.agencia.AgenciaRequestDTO
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.usuario.normalizarCorreo
+import jakarta.validation.Valid
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -28,6 +30,14 @@ data class RegisterRequestDTO(
         perfil = perfil,
     )
 }
+
+/** Alta de una agencia junto con la cuenta de su primer agente. */
+data class RegisterAgenciaRequestDTO(
+    @field:Valid
+    val usuario: RegisterRequestDTO,
+    @field:Valid
+    val agencia: AgenciaRequestDTO,
+)
 
 data class LoginRequestDTO(
     @field:NotBlank @field:Email @field:Size(max = 255)

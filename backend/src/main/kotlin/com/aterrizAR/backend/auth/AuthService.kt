@@ -1,5 +1,7 @@
 package com.aterrizAR.backend.auth
 
+import com.aterrizAR.backend.agencia.AgenciaRepository
+import com.aterrizAR.backend.model.Agente
 import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Usuario
 import com.aterrizAR.backend.observability.NegocioMetrics
@@ -10,13 +12,16 @@ import com.aterrizAR.backend.usuario.UsuarioRepository
 import com.aterrizAR.backend.usuario.normalizarCorreo
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class AuthService(
     private val usuarioRepository: UsuarioRepository,
+    private val agenciaRepository: AgenciaRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     private val refreshTokenService: RefreshTokenService,
@@ -43,6 +48,37 @@ class AuthService(
         log.info("Usuario registrado: usuarioId={} rol={}", usuario.id, usuario.toDTO().role)
         return usuario.toDTO()
     }
+
+    /** Crea la agencia y a su primer agente en una sola transacción: si falla uno, no se guarda ninguno. */
+    @Transactional
+    fun registerAgencia(request: RegisterAgenciaRequestDTO): PublicUserResponseDTO {
+        val agenciaToSave = request.agencia.toModel()
+        if (usuarioRepository.existsByCorreo(normalizarCorreo(request.usuario.correo))) {
+            throw DuplicateEmailException()
+        }
+        if (agenciaRepository.existsByEmail(agenciaToSave.email)) {
+            throw agenciaEmailDuplicado()
+        }
+
+        val agencia = try {
+            agenciaRepository.saveAndFlush(agenciaToSave)
+        } catch (exception: DataIntegrityViolationException) {
+            throw agenciaEmailDuplicado(exception)
+        }
+        val usuarioToSave = request.usuario.toModel(
+            passwordHash = requireNotNull(passwordEncoder.encode(request.usuario.password)),
+            perfil = Agente(agencia),
+        )
+        val usuario = try {
+            usuarioRepository.saveAndFlush(usuarioToSave)
+        } catch (_: DataIntegrityViolationException) {
+            throw DuplicateEmailException()
+        }
+        return usuario.toDTO()
+    }
+
+    private fun agenciaEmailDuplicado(cause: Throwable? = null) =
+        ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una agencia con ese email", cause)
 
     @Transactional
     fun login(request: LoginRequestDTO): AuthenticatedSession {
