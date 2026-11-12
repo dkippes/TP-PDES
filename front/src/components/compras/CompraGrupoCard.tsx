@@ -1,7 +1,9 @@
 import { formatFechaCompleta, formatPrecio, formatRango } from '../paquetes/format'
 import type { CompraGrupo } from './agruparCompras'
+import type { useValoraciones } from '../../hooks/useValoraciones'
+import { ValoracionCompra } from '../valoraciones/ValoracionCompra'
 
-export function CompraGrupoCard({ grupo }: Readonly<{ grupo: CompraGrupo }>) {
+export function CompraGrupoCard({ grupo, valoraciones }: Readonly<{ grupo: CompraGrupo; valoraciones: ReturnType<typeof useValoraciones> }>) {
   const { paquete, compras, total } = grupo
   return <li className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -23,9 +25,15 @@ export function CompraGrupoCard({ grupo }: Readonly<{ grupo: CompraGrupo }>) {
         Ver detalle de {compras.length === 1 ? 'la compra' : `las ${compras.length} compras`}
       </summary>
       <ul className="mt-3 divide-y divide-slate-100 text-sm">
-        {compras.map((compra) => <li key={compra.id} className="flex items-center justify-between gap-4 py-2.5">
-          <span className="text-slate-700">Compra n.º {compra.id} · {formatFechaCompleta(compra.fecha)}</span>
-          <span className="font-semibold text-slate-900">{formatPrecio(compra.precio)}</span>
+        {compras.map((compra) => <li key={compra.id} className="py-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <span className="text-slate-700">Compra n.º {compra.id} · {formatFechaCompleta(compra.fecha)}</span>
+            <span className="font-semibold text-slate-900">{formatPrecio(compra.precio)}</span>
+          </div>
+          <ValoracionCompra compraId={compra.id} valoracion={valoraciones.porCompra.get(compra.id)}
+            disabled={valoraciones.loading || !!valoraciones.error}
+            onGuardar={(datos) => valoraciones.guardar(compra.id, datos)}
+            onEliminar={() => valoraciones.eliminar(compra.id)} />
         </li>)}
       </ul>
     </details>

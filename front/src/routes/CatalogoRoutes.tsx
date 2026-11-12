@@ -58,5 +58,5 @@ export function ComprasRoute() {
   const comprador = useCompradorContext()
   if (!comprador) return null
   const { compras, loading, error, reload } = comprador.historial
-  return <ComprasPage compras={compras} loading={loading} error={error} onRetry={reload} onHome={() => navigate(rutas.inicio)} />
+  return <ComprasPage compras={compras} loading={loading} error={error} onRetry={reload} onHome={() => navigate(rutas.inicio)} valoracionesApi={comprador.valoracionesApi} />
 }
