@@ -26,7 +26,7 @@ export function AgenciaPage({ session, onSessionRenewed, onSessionExpired }: Rea
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Mi agencia</h1>
       <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Gestioná los paquetes que ofrece tu agencia y consultá tus ventas y clientes.</p>
     </section>
-    {perfil.loading && <p role="status" className="py-10 text-center text-slate-500">Cargando tu agencia...</p>}
+    {perfil.loading && <output className="block py-10 text-center text-slate-500">Cargando tu agencia...</output>}
     {perfil.error && <div className="py-6"><p role="alert" className="mb-4 text-sm text-red-700">{perfil.error}</p><button type="button" className={secondaryClass} onClick={perfil.reload}>Reintentar</button></div>}
     {!perfil.loading && !perfil.error && (agenciaId === null
       ? <p role="alert" className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800">Tu cuenta no está asociada a ninguna agencia.</p>

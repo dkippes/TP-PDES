@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { registrarAgencia } from '../../api/auth'
 import { useAsyncAction } from '../useAsyncAction'
 
@@ -12,7 +12,7 @@ export function useRegisterAgenciaForm(onRegistered: () => void) {
   const changeAgencia = (field: keyof typeof agencia, value: string) => {
     setAgencia((current) => ({ ...current, [field]: value }))
   }
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => {
       await registrarAgencia({ usuario, agencia: { nombre: agencia.nombre.trim(), email: agencia.email.trim() } })

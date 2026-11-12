@@ -52,7 +52,7 @@ export function Select({ label, value, options, onChange, placeholder, emptyMess
     onChange(option.value)
     setOpen(false)
   }
-  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const last = options.length - 1
     switch (event.key) {
       case 'ArrowDown': case 'ArrowUp': {
@@ -97,9 +97,9 @@ export function Select({ label, value, options, onChange, placeholder, emptyMess
     </button>
     {open && <ul id={`${id}-list`} role="listbox" aria-labelledby={`${id}-label`} style={panel}
       className="z-20 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
-      {options.length === 0 && <li role="presentation" className="px-3 py-3 text-center font-normal text-slate-500">{emptyMessage}</li>}
+      {options.length === 0 && <li className="px-3 py-3 text-center font-normal text-slate-500">{emptyMessage}</li>}
       {options.map((option, index) => <li key={option.value} id={`${id}-option-${index}`} role="option" aria-selected={option.value === value}
-        onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => setActive(index)} onClick={() => choose(option)}
+        onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => setActive(index)} onClick={() => choose(option)} onKeyDown={onKeyDown}
         className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 ${index === active ? 'bg-sky-50' : ''}`}>
         <span className="min-w-0 flex-1">
           <span className={`block text-slate-900 ${option.value === value ? 'font-semibold' : 'font-medium'}`}>{option.label}</span>

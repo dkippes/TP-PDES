@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { registrarUsuario } from '../../api/auth'
 import { useAsyncAction } from '../useAsyncAction'
 
@@ -8,7 +8,7 @@ export function useRegisterForm(onRegistered: () => void) {
   const change = (field: keyof typeof form, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
   }
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => {
       await registrarUsuario(form)

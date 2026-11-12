@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { iniciarSesion, type SesionAutenticada } from '../../api/auth'
 import { useAsyncAction } from '../useAsyncAction'
 
@@ -7,7 +7,7 @@ export function useLoginForm(onLoggedIn: (session: SesionAutenticada) => void) {
   const [password, setPassword] = useState('')
   const { busy, error, execute } = useAsyncAction('No se pudo iniciar sesión.')
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => { onLoggedIn(await iniciarSesion(correo, password)) })
   }

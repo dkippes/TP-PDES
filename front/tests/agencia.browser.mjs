@@ -199,8 +199,8 @@ test('the actions header explains with a tooltip why packages with purchases can
   await expect(page.getByRole('tooltip')).toBeVisible()
   await expect(info).toHaveAccessibleDescription(new RegExp(regla))
   // The inert actions open nothing.
-  await editar.click({ force: true })
-  await eliminar.click({ force: true })
+  await editar.dispatchEvent('click')
+  await eliminar.dispatchEvent('click')
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 

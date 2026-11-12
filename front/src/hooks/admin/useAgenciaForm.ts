@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import type { AgenciasApi } from '../../api/admin'
 import type { AgenciaResponseDTO } from '../../types/admin'
 import { useAsyncAction } from '../useAsyncAction'
@@ -13,7 +13,7 @@ export function useAgenciaForm({ api, agencia, onSaved }: AgenciaFormOptions) {
   const [nombre, setNombre] = useState(agencia?.nombre ?? '')
   const [email, setEmail] = useState(agencia?.email ?? '')
   const { busy, error, execute } = useAsyncAction('No se pudo guardar la agencia.')
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => {
       const datos = { nombre: nombre.trim(), email: email.trim() }

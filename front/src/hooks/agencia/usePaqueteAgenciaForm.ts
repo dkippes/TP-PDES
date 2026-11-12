@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type SubmitEvent } from 'react'
 import type { AgenciaApi } from '../../api/agencia'
 import { opcionesIda, opcionesVuelta } from '../../components/agencia/vuelos'
 import type { HotelDTO, PaqueteGestionDTO, VueloDTO } from '../../types/agencia'
@@ -56,7 +56,7 @@ export function usePaqueteAgenciaForm({ api, agenciaId, paquete, hoteles, vuelos
   }
   const elegirIda = (id: string) => setForm((current) => ({ ...current, vueloIdaId: id, vueloVueltaId: '' }))
   const completo = fechasElegidas && form.hotelId !== '' && form.precio !== '' && form.vueloIdaId !== '' && form.vueloVueltaId !== ''
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     await execute(async () => {
       const datos = {

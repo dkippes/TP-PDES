@@ -3,7 +3,7 @@ import { FormField } from '../forms/FormField'
 import { AuthForm } from './AuthForm'
 import { UsuarioFields } from './UsuarioFields'
 
-export function RegisterAgenciaForm({ onRegistered }: { onRegistered: () => void }) {
+export function RegisterAgenciaForm({ onRegistered }: Readonly<{ onRegistered: () => void }>) {
   const { usuario, changeUsuario, agencia, changeAgencia, busy, error, submit } = useRegisterAgenciaForm(onRegistered)
 
   return <AuthForm onSubmit={submit} busy={busy} error={error} submitLabel="Registrar mi agencia" pendingLabel="Registrando...">

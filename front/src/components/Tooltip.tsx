@@ -16,7 +16,7 @@ export function Tooltip({ texto, children }: Readonly<TooltipProps>) {
   const visible = hover || focus
   const style = useFloatingPanel(anchor, visible, 224)
 
-  return <span ref={anchor} className="inline-flex" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+  return <span ref={anchor} role="presentation" className="inline-flex" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
     onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
     onKeyDown={(event) => { if (event.key === 'Escape') { setHover(false); setFocus(false) } }}>
     {children({ 'aria-describedby': id })}
