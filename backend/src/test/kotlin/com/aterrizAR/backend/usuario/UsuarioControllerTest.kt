@@ -9,6 +9,7 @@ import com.aterrizAR.backend.model.Comprador
 import com.aterrizAR.backend.model.Perfil
 import com.aterrizAR.backend.model.Usuario
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -145,6 +146,21 @@ class UsuarioControllerTest {
     }
 
     @Test
+    fun `an administrator cannot change another users role or partially update their data`() {
+        val comprador = usuario("comprador@example.com", Comprador())
+
+        perform(json(put("/api/usuarios/${comprador.id}"), usuarioJson(
+            correo = "nuevo@example.com", rol = "ADMINISTRADOR", extra = ""","password":"nueva-clave"""",
+        )))
+            .andExpect(status().isConflict)
+
+        val persisted = usuarioRepository.findById(comprador.id!!).orElseThrow()
+        assertEquals(comprador.toDTO(), persisted.toDTO())
+        assertEquals(comprador.perfil.id, persisted.perfil.id)
+        assertEquals(comprador.passwordHash, persisted.passwordHash)
+    }
+
+    @Test
     fun `full crud flow through the HTTP layer`() {
         val createResult = perform(json(post("/api/usuarios"), usuarioJson()))
             .andExpect(status().isCreated).andReturn()
@@ -158,9 +174,9 @@ class UsuarioControllerTest {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        perform(json(put("/api/usuarios/$id"), usuarioJson(rol = "ADMINISTRADOR", extra = ""","password":"nueva-clave"""")))
+        perform(json(put("/api/usuarios/$id"), usuarioJson(extra = ""","password":"nueva-clave"""")))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.rol").value("ADMINISTRADOR"))
+            .andExpect(jsonPath("$.rol").value("COMPRADOR"))
         assertTrue(passwordEncoder.matches("nueva-clave", usuarioRepository.findById(id.toLong()).orElseThrow().passwordHash))
 
         perform(delete("/api/usuarios/$id")).andExpect(status().isNoContent)

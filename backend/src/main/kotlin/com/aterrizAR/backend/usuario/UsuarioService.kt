@@ -46,20 +46,18 @@ class UsuarioService(
     }
 
     @Transactional
-    fun update(id: Long, request: UsuarioUpdateRequestDTO, autenticado: UsuarioAutenticado): Usuario {
+    fun update(id: Long, request: UsuarioUpdateRequestDTO): Usuario {
         val usuario = findById(id)
-        if (id == autenticado.id && request.rol != Roles.ADMINISTRADOR) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "No puede quitarse el rol de administrador a sí mismo")
+        if (request.rol != usuario.perfil.roleName) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "No se puede cambiar el rol de un usuario existente")
         }
+        validateAgenciaId(usuario.perfil.roleName, request.agenciaId)
         val correo = normalizarCorreo(request.correo)
         // Antes de modificar la entidad: la consulta dispararía un flush de los cambios pendientes.
         validateCorreoUnico(correo, excludeId = id)
-        val cambiaRol = usuario.perfil.roleName != request.rol
-        val nuevoPerfil = if (cambiaRol || cambiaAgencia(usuario.perfil, request.agenciaId)) {
-            perfilPara(request.rol, request.agenciaId)
-        } else {
-            validateAgenciaId(request.rol, request.agenciaId)
-            null
+        val perfil = usuario.perfil
+        if (perfil is Agente && perfil.agencia.id != request.agenciaId) {
+            perfil.agencia = agenciaService.findById(requireNotNull(request.agenciaId))
         }
 
         usuario.nombre = request.nombre.trim()
@@ -67,11 +65,9 @@ class UsuarioService(
         usuario.correo = correo
         usuario.direccion = request.direccion.trim()
         request.password?.let { usuario.passwordHash = hash(it) }
-        nuevoPerfil?.let { usuario.perfil = it }
         val saved = save(usuario)
 
-        // El rol viaja en el JWT y la contraseña cambió: se cierran las sesiones renovables del usuario.
-        if (cambiaRol || request.password != null) {
+        if (request.password != null) {
             refreshTokenService.revokeAllFor(id)
         }
         return saved
@@ -143,9 +139,6 @@ class UsuarioService(
         }
     }
 
-    private fun cambiaAgencia(perfil: Perfil, agenciaId: Long?): Boolean =
-        perfil is Agente && agenciaId != null && perfil.agencia.id != agenciaId
-
     private fun validateCorreoUnico(correo: String, excludeId: Long?) {
         if (usuarioRepository.existsByCorreoAndIdNot(correo, excludeId ?: -1L)) {
             throw correoDuplicado()
@@ -154,13 +147,12 @@ class UsuarioService(
 
     private fun hash(password: String): String = requireNotNull(passwordEncoder.encode(password))
 
-    // El UNIQUE de la base cubre la carrera con la validación previa; el reemplazo de perfil
-    // también falla aquí si el perfil anterior (un Comprador con compras o valoraciones) tiene referencias.
+    // El UNIQUE de la base cubre la carrera con la validación previa.
     private fun save(usuario: Usuario): Usuario = try {
         usuarioRepository.saveAndFlush(usuario)
     } catch (exception: DataIntegrityViolationException) {
         throw ResponseStatusException(
-            HttpStatus.CONFLICT, "El correo ya está registrado o el perfil anterior tiene compras o valoraciones", exception,
+            HttpStatus.CONFLICT, "El correo ya está registrado", exception,
         )
     }
 

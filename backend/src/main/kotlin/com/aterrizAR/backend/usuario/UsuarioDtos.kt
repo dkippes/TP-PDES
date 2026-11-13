@@ -40,6 +40,7 @@ data class UsuarioUpdateRequestDTO(
     @field:NotBlank @field:Size(max = 255)
     val direccion: String,
     @field:NotBlank @field:Pattern(regexp = ROLES_PATTERN)
+    // Debe coincidir con el rol actual; no se permite cambiarlo.
     val rol: String,
     val agenciaId: Long? = null,
     // Opcional: si se envía, el administrador resetea la contraseña.

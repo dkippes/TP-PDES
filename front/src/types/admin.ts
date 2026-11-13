@@ -20,3 +20,10 @@ export type UsuarioResponseDTO = {
 
 export type UsuarioCreateRequestDTO = Omit<UsuarioResponseDTO, 'id'> & { password: string }
 export type UsuarioUpdateRequestDTO = Omit<UsuarioResponseDTO, 'id'> & { password?: string }
+
+export type ReporteAdminDTO = {
+  usuariosConMasCompras: { usuarioId: number; nombre: string; apellido: string; totalCompras: number }[]
+  destinosMejorRankeados: { destino: string; promedio: number; totalValoraciones: number }[]
+  agenciasConMasVentas: { agenciaId: number; nombre: string; totalVentas: number }[]
+  destinosMasVendidos: { destino: string; totalVentas: number }[]
+}
