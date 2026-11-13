@@ -86,6 +86,15 @@ Servicios:
 
 Compose Watch reinicia Backend o Flying Service cuando cambia su `src/main` o `build.gradle.kts`; Gradle recompila al arrancar el servicio. Sólo necesitás `--build` nuevamente si tocás un `Dockerfile` o `package.json`.
 
+## Kubernetes (cluster local)
+
+El stack completo también corre en un cluster local (Docker Desktop) con los manifiestos de `k8s/`:
+```bash
+kubectl apply -k k8s/
+```
+
+Se abre en http://localhost. Requiere construir las imágenes e instalar un ingress controller y metrics-server antes; los pasos están en [Docs/kubernetes.md](Docs/kubernetes.md).
+
 ## Observabilidad (Grafana, Prometheus y Loki)
 
 Es opcional y se suma al stack de desarrollo con un archivo adicional de Compose:

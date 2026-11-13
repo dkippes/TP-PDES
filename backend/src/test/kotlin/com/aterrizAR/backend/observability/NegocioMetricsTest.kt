@@ -74,6 +74,8 @@ class NegocioMetricsTest {
     @Test
     fun `only health and prometheus are exposed`() {
         mockMvc.perform(get("/actuator/health")).andExpect(status().isOk)
+        // Kubernetes probes llegan sin credenciales
+        mockMvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk)
         mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized)
     }
 }

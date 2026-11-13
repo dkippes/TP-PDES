@@ -71,6 +71,7 @@ class SecurityConfig(
                 HttpMethod.GET,
                 "/api/health",
                 "/actuator/health",
+                "/actuator/health/**",
                 "/actuator/prometheus",
                 "/api/paquetes",
                 "/api/paquetes/buscar",

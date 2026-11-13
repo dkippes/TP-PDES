@@ -1,0 +1,13 @@
+# Punto de entrada: `kubectl apply -k k8s/` aplica todo en el namespace aterrizar.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: aterrizar
+resources:
+  - namespace.yaml
+  - config.yaml
+  - postgres.yaml
+  - flying-postgres.yaml
+  - flying-service.yaml
+  - backend.yaml
+  - front.yaml
+  - ingress.yaml

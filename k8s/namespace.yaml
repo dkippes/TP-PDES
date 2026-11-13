@@ -1,0 +1,24 @@
+# Namespace donde vive todo el stack y la cuota de recursos que lo limita.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aterrizar
+  labels:
+    app.kubernetes.io/part-of: aterrizar
+---
+# Con esta cuota, todo contenedor (incluidos los initContainers) debe declarar
+# requests y limits; si no, el pod no se crea.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: aterrizar-quota
+  namespace: aterrizar
+  labels:
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  hard:
+    requests.cpu: "3"
+    requests.memory: 4Gi
+    limits.cpu: "8"
+    limits.memory: 8Gi
+    pods: "15"
