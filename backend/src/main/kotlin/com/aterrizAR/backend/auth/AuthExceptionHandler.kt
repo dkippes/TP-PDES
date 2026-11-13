@@ -1,6 +1,7 @@
 package com.aterrizAR.backend.auth
 
 import jakarta.validation.ConstraintViolationException
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -13,6 +14,8 @@ import org.springframework.web.server.ResponseStatusException
 // Aplica a toda la API: los errores se responden aquí con ApiErrorResponseDTO en vez de reenviarse a /error.
 @RestControllerAdvice
 class AuthExceptionHandler {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(exception: MethodArgumentNotValidException): ResponseEntity<ApiErrorResponseDTO> {
         val fields = exception.bindingResult.fieldErrors.associate { error ->
@@ -36,6 +39,7 @@ class AuthExceptionHandler {
     @ExceptionHandler(ResponseStatusException::class)
     fun handleResponseStatus(exception: ResponseStatusException): ResponseEntity<ApiErrorResponseDTO> {
         val status = HttpStatus.resolve(exception.statusCode.value()) ?: HttpStatus.INTERNAL_SERVER_ERROR
+        if (status.is5xxServerError) log.error("Error del servidor: status={} motivo={}", status.value(), exception.reason, exception)
         return error(status, exception.reason ?: status.reasonPhrase)
     }
 

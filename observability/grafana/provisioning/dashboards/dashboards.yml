@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: AterrizAR
+    type: file
+    folder: AterrizAR
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

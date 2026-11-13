@@ -86,6 +86,22 @@ Servicios:
 
 Compose Watch reinicia Backend o Flying Service cuando cambia su `src/main` o `build.gradle.kts`; Gradle recompila al arrancar el servicio. Sólo necesitás `--build` nuevamente si tocás un `Dockerfile` o `package.json`.
 
+## Observabilidad (Grafana, Prometheus y Loki)
+
+Es opcional y se suma al stack de desarrollo con un archivo adicional de Compose:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch
+```
+
+- Grafana: http://localhost:3000 (cambiá el puerto con `GRAFANA_PORT` en `.env`). No pide login en desarrollo.
+- Dashboard: **AterrizAR - Overview**, en Dashboards > AterrizAR. Tiene tráfico y errores HTTP, métricas de negocio (registros, logins, compras, ventas de vuelos), JVM y logs con filtros.
+- Explorar a mano: en *Explore*, elegí Prometheus (`aterrizar_compras_total`) o Loki (`{service="backend"}`).
+- Métricas: ambos servicios exponen `/actuator/prometheus`; Prometheus las lee cada 15 s.
+- Logs: con este archivo los servicios escriben JSON por consola; Alloy los envía a Loki. Sin él, los logs siguen legibles como siempre.
+- Los logs registran IDs internos y roles, nunca emails, contraseñas ni tokens.
+- Los cambios hechos al dashboard desde la UI no se guardan en el repo: exportá el JSON a `observability/grafana/provisioning/dashboards/json/`.
+- Con Colima, si el puerto de Grafana no responde desde el navegador, `colima restart` rehace el reenvío de puertos.
+
 ## Administración y datos demo
 
 Al iniciar con el perfil `dev` (predeterminado de Compose), se cargan automáticamente en PostgreSQL estas cuentas, todas con contraseña `12345678`:
