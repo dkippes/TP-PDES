@@ -1,6 +1,6 @@
 import type { JsonRequest } from './http'
 import type {
-  AgenciaRequestDTO, AgenciaResponseDTO, UsuarioCreateRequestDTO, UsuarioResponseDTO, UsuarioUpdateRequestDTO,
+  AgenciaRequestDTO, AgenciaResponseDTO, ReporteAdminDTO, UsuarioCreateRequestDTO, UsuarioResponseDTO, UsuarioUpdateRequestDTO,
 } from '../types/admin'
 
 export interface UsuariosApi {
@@ -17,7 +17,11 @@ export interface AgenciasApi {
   eliminar(id: number): Promise<void>
 }
 
-export type AdminApi = { usuarios: UsuariosApi; agencias: AgenciasApi }
+export interface ReportesApi {
+  obtener(): Promise<ReporteAdminDTO>
+}
+
+export type AdminApi = { usuarios: UsuariosApi; agencias: AgenciasApi; reportes: ReportesApi }
 
 // Resource operations depend on an authenticated request, not on fetch or React state.
 export function createAdminApi(request: JsonRequest): AdminApi {
@@ -33,6 +37,9 @@ export function createAdminApi(request: JsonRequest): AdminApi {
       crear: (datos) => request('POST', 'agencias', datos),
       editar: (id, datos) => request('PUT', `agencias/${id}`, datos),
       eliminar: (id) => request('DELETE', `agencias/${id}`),
+    },
+    reportes: {
+      obtener: () => request('GET', 'admin/reportes'),
     },
   }
 }

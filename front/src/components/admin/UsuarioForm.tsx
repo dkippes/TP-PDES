@@ -8,8 +8,8 @@ import { inputClass, roleLabels } from './controls'
 
 type Props = UsuarioFormOptions & { agencias: AgenciaResponseDTO[]; onClose: () => void }
 
-export function UsuarioForm({ api, usuario, agencias, currentUserId, onSaved, onClose }: Props) {
-  const { form, change, isSelf, busy, error, submit } = useUsuarioForm({ api, usuario, currentUserId, onSaved })
+export function UsuarioForm({ api, usuario, agencias, onSaved, onClose }: Props) {
+  const { form, change, busy, error, submit } = useUsuarioForm({ api, usuario, onSaved })
   const rolId = useId()
   const agenciaId = useId()
 
@@ -22,10 +22,10 @@ export function UsuarioForm({ api, usuario, agencias, currentUserId, onSaved, on
         </div>
         <FormField label="Correo electrónico" className={inputClass} type="email" value={form.correo} onChange={(event) => change('correo', event.target.value)} required maxLength={255} autoComplete="off" />
         <FormField label="Dirección" className={inputClass} value={form.direccion} onChange={(event) => change('direccion', event.target.value)} required maxLength={255} />
-        <div><label htmlFor={rolId} className="block text-sm font-medium">Rol</label><select id={rolId} className={inputClass} value={form.rol} onChange={(event) => { if (esRol(event.target.value)) change('rol', event.target.value) }} disabled={isSelf}>
+        <div><label htmlFor={rolId} className="block text-sm font-medium">Rol</label><select id={rolId} className={inputClass} value={form.rol} onChange={(event) => { if (esRol(event.target.value)) change('rol', event.target.value) }} disabled={usuario !== null}>
           {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></div>
-        {isSelf && <p className="text-xs text-slate-500">Tu propia cuenta debe conservar el rol de administrador.</p>}
+        {usuario && <p className="text-xs text-slate-500">El rol se define al crear la cuenta y no se puede modificar.</p>}
         {form.rol === 'AGENTE' && <>
           <div><label htmlFor={agenciaId} className="block text-sm font-medium">Agencia</label><select id={agenciaId} className={inputClass} value={form.agenciaId} onChange={(event) => change('agenciaId', event.target.value)} required>
             <option value="">Seleccioná una agencia</option>

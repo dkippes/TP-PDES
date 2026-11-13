@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "test:admin": "node --test tests/admin.browser.mjs",
+    "test:admin-reportes": "node --test tests/admin-reportes.browser.mjs",
     "test:paquete-detalle": "node --test tests/paquete-detalle.browser.mjs",
     "test:agencia": "node --test tests/agencia.browser.mjs",
     "test:rutas": "node --test tests/rutas.browser.mjs",

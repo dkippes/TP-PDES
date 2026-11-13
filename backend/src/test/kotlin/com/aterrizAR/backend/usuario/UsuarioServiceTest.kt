@@ -28,7 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.web.server.ResponseStatusException
 
-// Sin @Transactional: los tests de borrado y reemplazo de perfil necesitan que el servicio confirme su transacción.
+// Sin @Transactional: los tests necesitan observar los cambios confirmados por el servicio.
 @SpringBootTest
 @ActiveProfiles("test")
 class UsuarioServiceTest {
@@ -201,32 +201,50 @@ class UsuarioServiceTest {
 
     @Test
     fun `update with the same role keeps profile, password and sessions`() {
-        val created = usuarioService.create(createRequest())
-        refreshTokenService.issueFor(created)
+        val agencia = agencia()
+        for (rol in listOf(Roles.COMPRADOR, Roles.AGENTE, Roles.ADMINISTRADOR)) {
+            val agenciaId = if (rol == Roles.AGENTE) agencia.id else null
+            val created = usuarioService.create(createRequest(correo = "$rol@example.com", rol = rol, agenciaId = agenciaId))
+            refreshTokenService.issueFor(created)
 
-        val updated = usuarioService.update(created.id!!, updateRequest(correo = "Nueva@Example.com"), administrador)
+            val updated = usuarioService.update(created.id!!, updateRequest(correo = "Nueva-$rol@Example.com", rol = rol, agenciaId = agenciaId))
 
-        assertEquals("Ana Maria", updated.nombre)
-        assertEquals("nueva@example.com", updated.correo)
-        assertEquals(created.perfil.id, updated.perfil.id)
-        assertTrue(passwordEncoder.matches("12345678", updated.passwordHash))
-        assertEquals(1, activeTokens(updated))
+            assertEquals("Ana Maria", updated.nombre)
+            assertEquals("nueva-${rol.lowercase()}@example.com", updated.correo)
+            assertEquals(rol, updated.perfil.roleName)
+            assertEquals(created.perfil.id, updated.perfil.id)
+            assertTrue(passwordEncoder.matches("12345678", updated.passwordHash))
+            assertEquals(1, activeTokens(updated))
+        }
     }
 
     @Test
-    fun `update changing the role replaces the profile and revokes sessions`() {
-        val created = usuarioService.create(createRequest())
-        refreshTokenService.issueFor(created)
+    fun `update rejects every role change without modifying data or sessions`() {
         val agencia = agencia()
+        val roles = listOf(Roles.COMPRADOR, Roles.AGENTE, Roles.ADMINISTRADOR)
+        for (rol in roles) {
+            val agenciaId = if (rol == Roles.AGENTE) agencia.id else null
+            val created = usuarioService.create(createRequest(correo = "$rol@example.com", rol = rol, agenciaId = agenciaId))
+            refreshTokenService.issueFor(created)
 
-        val updated = usuarioService.update(
-            created.id!!, updateRequest(rol = Roles.AGENTE, agenciaId = agencia.id), administrador,
-        )
+            for (nuevoRol in roles.filter { it != rol }) {
+                val exception = assertThrows(ResponseStatusException::class.java) {
+                    usuarioService.update(created.id!!, updateRequest(
+                        correo = "nuevo@example.com", rol = nuevoRol,
+                        agenciaId = if (nuevoRol == Roles.AGENTE) agencia.id else null,
+                        password = "nueva-clave",
+                    ))
+                }
 
-        assertEquals(Roles.AGENTE, usuarioService.findById(created.id!!).perfil.roleName)
-        assertNotEquals(created.perfil.id, updated.perfil.id)
-        assertEquals(1, perfilCount())
-        assertEquals(0, activeTokens(updated))
+                assertEquals(409, exception.statusCode.value())
+                val persisted = usuarioService.findById(created.id!!)
+                assertEquals(created.toDTO(), persisted.toDTO())
+                assertEquals(created.perfil.id, persisted.perfil.id)
+                assertEquals(created.passwordHash, persisted.passwordHash)
+                assertEquals(1, activeTokens(persisted))
+            }
+        }
+        assertEquals(3, perfilCount())
     }
 
     @Test
@@ -235,10 +253,26 @@ class UsuarioServiceTest {
         val nueva = agencia("nueva@example.com")
         val created = usuarioService.create(createRequest(rol = Roles.AGENTE, agenciaId = original.id))
 
-        usuarioService.update(created.id!!, updateRequest(rol = Roles.AGENTE, agenciaId = nueva.id), administrador)
+        usuarioService.update(created.id!!, updateRequest(rol = Roles.AGENTE, agenciaId = nueva.id))
 
-        assertEquals(nueva.id, usuarioService.findById(created.id!!).toDTO().agenciaId)
+        val updated = usuarioService.findById(created.id!!)
+        assertEquals(nueva.id, updated.toDTO().agenciaId)
+        assertEquals(created.perfil.id, updated.perfil.id)
         assertEquals(1, perfilCount())
+    }
+
+    @Test
+    fun `update rejects a missing or nonexistent agency without changing the agent`() {
+        val original = agencia()
+        val created = usuarioService.create(createRequest(rol = Roles.AGENTE, agenciaId = original.id))
+
+        for ((agenciaId, status) in listOf(null to 400, 999L to 404)) {
+            val exception = assertThrows(ResponseStatusException::class.java) {
+                usuarioService.update(created.id!!, updateRequest(rol = Roles.AGENTE, agenciaId = agenciaId))
+            }
+            assertEquals(status, exception.statusCode.value())
+            assertEquals(created.toDTO(), usuarioService.findById(created.id!!).toDTO())
+        }
     }
 
     @Test
@@ -246,7 +280,7 @@ class UsuarioServiceTest {
         val created = usuarioService.create(createRequest())
         refreshTokenService.issueFor(created)
 
-        val updated = usuarioService.update(created.id!!, updateRequest(password = "nueva-clave"), administrador)
+        val updated = usuarioService.update(created.id!!, updateRequest(password = "nueva-clave"))
 
         assertTrue(passwordEncoder.matches("nueva-clave", updated.passwordHash))
         assertEquals(0, activeTokens(updated))
@@ -258,10 +292,10 @@ class UsuarioServiceTest {
         val created = usuarioService.create(createRequest())
 
         val duplicado = assertThrows(ResponseStatusException::class.java) {
-            usuarioService.update(created.id!!, updateRequest(correo = "OTRO@example.com"), administrador)
+            usuarioService.update(created.id!!, updateRequest(correo = "OTRO@example.com"))
         }
         val agenciaSobrante = assertThrows(ResponseStatusException::class.java) {
-            usuarioService.update(created.id!!, updateRequest(agenciaId = agencia().id), administrador)
+            usuarioService.update(created.id!!, updateRequest(agenciaId = agencia().id))
         }
 
         assertEquals(409, duplicado.statusCode.value())
@@ -272,12 +306,10 @@ class UsuarioServiceTest {
     @Test
     fun `an administrator cannot remove its own administrator role`() {
         val admin = usuarioService.create(createRequest(rol = Roles.ADMINISTRADOR))
-        val propio = UsuarioAutenticado(id = admin.id!!, rol = Roles.ADMINISTRADOR)
-
         val exception = assertThrows(ResponseStatusException::class.java) {
-            usuarioService.update(admin.id!!, updateRequest(rol = Roles.COMPRADOR), propio)
+            usuarioService.update(admin.id!!, updateRequest(rol = Roles.COMPRADOR))
         }
-        usuarioService.update(admin.id!!, updateRequest(rol = Roles.ADMINISTRADOR), propio)
+        usuarioService.update(admin.id!!, updateRequest(rol = Roles.ADMINISTRADOR))
 
         assertEquals(409, exception.statusCode.value())
         assertEquals(Roles.ADMINISTRADOR, usuarioService.findById(admin.id!!).perfil.roleName)
@@ -286,7 +318,7 @@ class UsuarioServiceTest {
     @Test
     fun `update throws 404 when the usuario does not exist`() {
         assertThrows(ResponseStatusException::class.java) {
-            usuarioService.update(999L, updateRequest(), administrador)
+            usuarioService.update(999L, updateRequest())
         }
     }
 
@@ -333,6 +365,29 @@ class UsuarioServiceTest {
     }
 
     @Test
+    fun `a buyer with purchases can update personal data but cannot change role`() {
+        val comprador = usuarioService.create(createRequest())
+        val agencia = agencia()
+        val paquete = paquete(agencia)
+        jdbcTemplate.update(
+            "INSERT INTO compra (operacion_id, precio, fecha, paquete_id, agencia_id, comprador_id) VALUES (?, ?, ?, ?, ?, ?)",
+            UUID.randomUUID(), 100f, LocalDate.of(2026, 9, 1), paquete.id, agencia.id, comprador.perfil.id,
+        )
+
+        val updated = usuarioService.update(comprador.id!!, updateRequest())
+        val exception = assertThrows(ResponseStatusException::class.java) {
+            usuarioService.update(comprador.id!!, updateRequest(rol = Roles.ADMINISTRADOR))
+        }
+
+        assertEquals(409, exception.statusCode.value())
+        assertEquals("Ana Maria", updated.nombre)
+        val persisted = usuarioService.findById(comprador.id!!)
+        assertEquals(Roles.COMPRADOR, persisted.perfil.roleName)
+        assertEquals(comprador.perfil.id, persisted.perfil.id)
+        assertEquals(1, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM compra WHERE comprador_id = ?", Int::class.java, persisted.perfil.id))
+    }
+
+    @Test
     fun `delete of a buyer with reviews returns 409 and keeps the reviews`() {
         val comprador = usuarioService.create(createRequest())
         valorar(comprador)
@@ -352,7 +407,7 @@ class UsuarioServiceTest {
         valorar(comprador)
 
         val exception = assertThrows(ResponseStatusException::class.java) {
-            usuarioService.update(comprador.id!!, updateRequest(rol = Roles.ADMINISTRADOR), administrador)
+            usuarioService.update(comprador.id!!, updateRequest(rol = Roles.ADMINISTRADOR))
         }
 
         assertEquals(409, exception.statusCode.value())
