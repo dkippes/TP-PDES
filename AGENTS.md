@@ -180,6 +180,17 @@ With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` cre
 
 `bootstrap/DevPaquetesSeeder` creates hotels and packages for Bariloche, Córdoba and Madrid, using available future round-trip flights from flying-service through `VueloClient` and the existing `PaqueteService` validations. It preserves existing packages by agency/hotel/route across restarts. An unavailable flight service or a missing route skips package fixtures until a later startup; it does not prevent creating demo users/agencies. Existing flight fixtures must still include future flights. No cross-service database access is used.
 
+## Kubernetes (local cluster)
+
+`k8s/` holds plain manifests applied with `kubectl apply -k k8s/` into namespace `aterrizar`; setup, image builds and the demo script are in `Docs/kubernetes.md`. It targets Docker Desktop Kubernetes and does not replace Compose for development. Cloud deployment, deploy from CD and the observability stack are not part of it.
+
+- Images are built locally as `aterrizar-backend:k8s`, `aterrizar-flying-service:k8s` and `aterrizar-front:k8s` (`imagePullPolicy: IfNotPresent`). The front must be built with `--build-arg VITE_API_URL=http://localhost`: the Ingress serves `/api` (backend) and `/` (front) on the same origin, so `CORS_ALLOWED_ORIGIN` is `http://localhost`.
+- Both PostgreSQL databases are StatefulSets with their own volume claim; the services stay Deployments. `backend` has no `replicas` field because its HPA (1 to 3, 80% CPU, needs metrics-server) owns it; it starts with one pod so the dev seeders do not race on an empty database.
+- The backend waits for PostgreSQL and flying-service in initContainers; without flying-service `DevPaquetesSeeder` would skip the demo packages.
+- Probes use `/actuator/health/liveness` and `/actuator/health/readiness`; `SecurityConfig` permits `/actuator/health/**` for that. `/actuator` is not routed by the Ingress.
+- The namespace has a ResourceQuota, so every container and initContainer must declare requests and limits or its pod is rejected.
+- The Ingress needs the ingress-nginx controller (archived upstream in 2026, kept because it is the one used in the course). Credentials are not committed: Kustomize generates the `aterrizar-secrets` Secret from the git-ignored `k8s/secrets.env` (copy `k8s/secrets.env.example`), because GitGuardian fails the PR on literal passwords in manifests. Database passwords are fixed when the volume is created, so changing them requires recreating the namespace.
+
 ## Build and verification commands
 
 Run the smallest relevant checks first, then the complete checks for each touched application.

@@ -1,0 +1,61 @@
+# Frontend (nginx con el build de Vite): Deployment con 2 réplicas y su Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front
+  labels:
+    app.kubernetes.io/name: front
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: front
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: front
+        app.kubernetes.io/part-of: aterrizar
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: front
+          image: aterrizar-front:k8s
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  labels:
+    app.kubernetes.io/name: front
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: front
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,14 @@
+# Configuración compartida del stack (ConfigMap). Las credenciales no van en el
+# repositorio: el Secret se genera desde k8s/secrets.env (ver kustomization.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aterrizar-config
+  labels:
+    app.kubernetes.io/name: aterrizar-config
+    app.kubernetes.io/part-of: aterrizar
+data:
+  SPRING_PROFILES_ACTIVE: dev
+  CORS_ALLOWED_ORIGIN: http://localhost
+  FLYING_SERVICE_URL: http://flying-service:8081
+  REFRESH_COOKIE_SECURE: "false"

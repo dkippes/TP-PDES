@@ -1,0 +1,22 @@
+# Punto de entrada: `kubectl apply -k k8s/` aplica todo en el namespace aterrizar.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: aterrizar
+resources:
+  - namespace.yaml
+  - config.yaml
+  - postgres.yaml
+  - flying-postgres.yaml
+  - flying-service.yaml
+  - backend.yaml
+  - front.yaml
+  - ingress.yaml
+
+# El Secret `aterrizar-secrets` se genera desde un archivo local que git ignora.
+# Crealo copiando secrets.env.example antes de aplicar.
+secretGenerator:
+  - name: aterrizar-secrets
+    envs:
+      - secrets.env
+generatorOptions:
+  disableNameSuffixHash: true

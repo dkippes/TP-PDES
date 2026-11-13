@@ -1,0 +1,85 @@
+# Base de datos de flying-service: StatefulSet con volumen persistente y Service headless.
+apiVersion: v1
+kind: Service
+metadata:
+  name: flying-postgres
+  labels:
+    app.kubernetes.io/name: flying-postgres
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: flying-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flying-postgres
+  labels:
+    app.kubernetes.io/name: flying-postgres
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  serviceName: flying-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: flying-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flying-postgres
+        app.kubernetes.io/part-of: aterrizar
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: flying_db
+            - name: POSTGRES_USER
+              value: flying
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aterrizar-secrets
+                  key: FLYING_POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "flying", "-d", "flying_db"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "flying", "-d", "flying_db"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: flying-postgres
+          app.kubernetes.io/part-of: aterrizar
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

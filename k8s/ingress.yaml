@@ -1,0 +1,42 @@
+# Punto de entrada único (http://localhost): /api y la documentación van al
+# backend, el resto al frontend. /actuator no se expone a propósito.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aterrizar
+  labels:
+    app.kubernetes.io/name: aterrizar
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+          - path: /swagger-ui
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+          - path: /v3/api-docs
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: front
+                port:
+                  number: 80

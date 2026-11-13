@@ -1,0 +1,109 @@
+# API interna de vuelos: Deployment con probes y rolling update, más su Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flying-service
+  labels:
+    app.kubernetes.io/name: flying-service
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  replicas: 1
+  # Actualiza sin corte: primero levanta la réplica nueva, después baja la vieja.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: flying-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flying-service
+        app.kubernetes.io/part-of: aterrizar
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: wait-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h flying-postgres -p 5432; do sleep 2; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      containers:
+        - name: flying-service
+          image: aterrizar-flying-service:k8s
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            # Por defecto la JVM usa el 25% del límite de memoria como heap; con 768Mi queda corta.
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=75
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://flying-postgres:5432/flying_db
+            - name: SPRING_DATASOURCE_USERNAME
+              value: flying
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aterrizar-secrets
+                  key: FLYING_POSTGRES_PASSWORD
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: aterrizar-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: CORS_ALLOWED_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: aterrizar-config
+                  key: CORS_ALLOWED_ORIGIN
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            periodSeconds: 10
+            # Margen para que una prueba de carga no dispare un reinicio.
+            timeoutSeconds: 3
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flying-service
+  labels:
+    app.kubernetes.io/name: flying-service
+    app.kubernetes.io/part-of: aterrizar
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: flying-service
+  ports:
+    - port: 8081
+      targetPort: 8081
