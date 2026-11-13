@@ -1,6 +1,5 @@
-# Configuración compartida (ConfigMap) y credenciales (Secret) del stack.
-# Valores de desarrollo, los mismos defaults que los Compose; no usar fuera de
-# un cluster local.
+# Configuración compartida del stack (ConfigMap). Las credenciales no van en el
+# repositorio: el Secret se genera desde k8s/secrets.env (ver kustomization.yaml).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,16 +12,3 @@ data:
   CORS_ALLOWED_ORIGIN: http://localhost
   FLYING_SERVICE_URL: http://flying-service:8081
   REFRESH_COOKIE_SECURE: "false"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: aterrizar-secrets
-  labels:
-    app.kubernetes.io/name: aterrizar-secrets
-    app.kubernetes.io/part-of: aterrizar
-type: Opaque
-stringData:
-  POSTGRES_PASSWORD: aterrizar123
-  FLYING_POSTGRES_PASSWORD: flying123
-  JWT_SECRET: dev-jwt-secret-min-32-chars-long-change-me-in-prod

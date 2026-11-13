@@ -189,7 +189,7 @@ With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` cre
 - The backend waits for PostgreSQL and flying-service in initContainers; without flying-service `DevPaquetesSeeder` would skip the demo packages.
 - Probes use `/actuator/health/liveness` and `/actuator/health/readiness`; `SecurityConfig` permits `/actuator/health/**` for that. `/actuator` is not routed by the Ingress.
 - The namespace has a ResourceQuota, so every container and initContainer must declare requests and limits or its pod is rejected.
-- The Ingress needs the ingress-nginx controller (archived upstream in 2026, kept because it is the one used in the course). The Secret in `k8s/config.yaml` carries the same development defaults as the Compose files; do not reuse it outside a local cluster.
+- The Ingress needs the ingress-nginx controller (archived upstream in 2026, kept because it is the one used in the course). Credentials are not committed: Kustomize generates the `aterrizar-secrets` Secret from the git-ignored `k8s/secrets.env` (copy `k8s/secrets.env.example`), because GitGuardian fails the PR on literal passwords in manifests. Database passwords are fixed when the volume is created, so changing them requires recreating the namespace.
 
 ## Build and verification commands
 

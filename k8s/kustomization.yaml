@@ -11,3 +11,12 @@ resources:
   - backend.yaml
   - front.yaml
   - ingress.yaml
+
+# El Secret `aterrizar-secrets` se genera desde un archivo local que git ignora.
+# Crealo copiando secrets.env.example antes de aplicar.
+secretGenerator:
+  - name: aterrizar-secrets
+    envs:
+      - secrets.env
+generatorOptions:
+  disableNameSuffixHash: true

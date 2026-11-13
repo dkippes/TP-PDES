@@ -21,7 +21,7 @@ Fuera de alcance: nube, despliegue desde el CD, observabilidad dentro del cluste
 | StatefulSet | `k8s/postgres.yaml` y `k8s/flying-postgres.yaml`, con `volumeClaimTemplates` |
 | Service | un Service por componente; los de las bases son headless |
 | Ingress | `k8s/ingress.yaml` |
-| ConfigMap / Secret | `k8s/config.yaml` |
+| ConfigMap / Secret | `k8s/config.yaml` y el `secretGenerator` de `k8s/kustomization.yaml` |
 
 ## Requisitos
 
@@ -78,6 +78,12 @@ docker build -t aterrizar-front:k8s --build-arg VITE_API_URL=http://localhost ./
 Vite fija la URL del backend al construir, y en el cluster el frontend y el backend salen por el mismo origen (`http://localhost`) a través del Ingress. Las imágenes locales son visibles para el Kubernetes de Docker Desktop, por eso los manifiestos usan `imagePullPolicy: IfNotPresent`.
 
 ## Levantar
+
+Las credenciales no están en el repositorio. Antes de aplicar por primera vez, copiá el archivo de ejemplo a `k8s/secrets.env` (git lo ignora) y elegí los valores; Kustomize genera el Secret a partir de ese archivo:
+
+```bash
+cp k8s/secrets.env.example k8s/secrets.env
+```
 
 ```bash
 kubectl apply -k k8s/
@@ -151,6 +157,8 @@ Esto también borra los datos de las bases.
 
 ## Problemas comunes
 
+- `kubectl apply -k k8s/` falla con un error sobre `secrets.env`: falta crear ese archivo desde `k8s/secrets.env.example`.
+- El backend o flying-service no logran conectarse a su base después de cambiar una clave: la clave se fija al crear el volumen. Borrá el namespace y volvé a aplicar.
 - Falta un pod y no aparece ni en `Pending`: la ResourceQuota lo rechazó. Buscá `exceeded quota` en `kubectl get events -n aterrizar` y revisá `kubectl describe resourcequota -n aterrizar`.
 - Pods en `Pending`: al nodo no le alcanzan los recursos o el volumen todavía no se creó; mirá `kubectl describe pod`.
 - `ImagePullBackOff`: falta construir la imagen con el tag `k8s`.

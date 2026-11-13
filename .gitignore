@@ -3,6 +3,7 @@
 *.iws
 *.ipr
 .env
+k8s/secrets.env
 .DS_Store
 **/.gradle/
 **/build/

@@ -93,7 +93,7 @@ El stack completo también corre en un cluster local (Docker Desktop) con los ma
 kubectl apply -k k8s/
 ```
 
-Se abre en http://localhost. Requiere construir las imágenes e instalar un ingress controller y metrics-server antes; los pasos están en [Docs/kubernetes.md](Docs/kubernetes.md).
+Se abre en http://localhost. Requiere crear `k8s/secrets.env` desde el ejemplo, construir las imágenes e instalar un ingress controller y metrics-server antes; los pasos están en [Docs/kubernetes.md](Docs/kubernetes.md).
 
 ## Observabilidad (Grafana, Prometheus y Loki)
 
