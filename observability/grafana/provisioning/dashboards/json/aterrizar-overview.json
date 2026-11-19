@@ -93,7 +93,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(aterrizar_usuarios)",
+          "expr": "max(aterrizar_usuarios)",
           "legendFormat": ""
         }
       ],

@@ -1,6 +1,6 @@
 # Observability stack (Grafana + Prometheus + Loki + Alloy). Use together with the base file:
 #   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch
-# Grafana: http://localhost:3000 (anonymous admin in dev; datasources provisioned).
+# Grafana: http://localhost:3005 (anonymous admin in dev; datasources provisioned).
 services:
   backend:
     environment:

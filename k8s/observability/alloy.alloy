@@ -1,0 +1,58 @@
+discovery.kubernetes "pods" {
+  role = "pod"
+
+  namespaces {
+    names = ["aterrizar"]
+  }
+
+  selectors {
+    role  = "pod"
+    label = "app.kubernetes.io/part-of=aterrizar"
+  }
+}
+
+discovery.relabel "pod_logs" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+    target_label  = "service"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label  = "container"
+  }
+}
+
+loki.source.kubernetes "pods" {
+  targets    = discovery.relabel.pod_logs.output
+  forward_to = [loki.process.pod_logs.receiver]
+}
+
+loki.process "pod_logs" {
+  stage.match {
+    selector = "{container=~\"backend|flying-service\"}"
+
+    stage.json {
+      expressions = { level = "log.level" }
+    }
+
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

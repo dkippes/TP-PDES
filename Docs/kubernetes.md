@@ -2,9 +2,9 @@
 
 ## Qué es y alcance
 
-Los manifiestos de `k8s/` levantan todo el stack de AterrizAR (frontend, backend, flying-service y las dos bases PostgreSQL) en un cluster local, el de Docker Desktop. Se aplican con `kubectl apply -k k8s/`. No reemplazan a Docker Compose para el desarrollo diario.
+`kubectl apply -k k8s/` levanta el stack de AterrizAR en el clúster local de Docker Desktop. El frontend, el backend, flying-service y sus dos bases PostgreSQL corren en `aterrizar`. Prometheus, Grafana, Loki y Alloy corren en `aterrizar-observability`.
 
-Fuera de alcance: nube, despliegue desde el CD, observabilidad dentro del cluster y estrategias canary o blue-green.
+El alcance es el despliegue local.
 
 ## Concepto de la materia y dónde está
 
@@ -45,11 +45,13 @@ kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/com
 
 El proyecto ingress-nginx fue archivado en 2026 y ya no recibe actualizaciones. Se usa porque es el que se vio en la materia y alcanza para un cluster local.
 
-metrics-server (necesario para el HPA):
+metrics-server (necesario para el HPA). Para Kubernetes 1.31–1.33, incluido Docker Desktop con Kubernetes 1.32, usá la versión 0.8.1:
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.1/components.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.1/components.yaml
 ```
+
+Para Kubernetes 1.34 o posterior, usá la [versión compatible de metrics-server](https://github.com/kubernetes-sigs/metrics-server#compatibility-matrix).
 
 Docker Desktop usa certificados que metrics-server no valida, así que hace falta este parche:
 
@@ -75,7 +77,13 @@ docker build -t aterrizar-flying-service:k8s ./flying.service
 docker build -t aterrizar-front:k8s --build-arg VITE_API_URL=http://localhost ./front
 ```
 
-Vite fija la URL del backend al construir, y en el cluster el frontend y el backend salen por el mismo origen (`http://localhost`) a través del Ingress. Las imágenes locales son visibles para el Kubernetes de Docker Desktop, por eso los manifiestos usan `imagePullPolicy: IfNotPresent`.
+```bash
+docker build -t aterrizar-alloy:1.10.0-k8s ./k8s/observability
+```
+
+La imagen de Alloy usa el paquete oficial de Grafana sobre Debian.
+
+Vite fija la URL del backend al construir. El frontend y el backend salen por el mismo origen (`http://localhost`) a través del Ingress. Kubernetes en Docker Desktop puede usar las imágenes construidas en el motor local.
 
 ## Levantar
 
@@ -87,10 +95,23 @@ cp k8s/secrets.env.example k8s/secrets.env
 
 ```bash
 kubectl apply -k k8s/
-kubectl get pods -n aterrizar -w
+kubectl get pods -n aterrizar
+kubectl get pods -n aterrizar-observability
 ```
 
 Cuando los pods estén en `Running` y `Ready`, abrí http://localhost. Los usuarios demo son los mismos que con Compose; ver la sección "Administración y datos demo" del `README.md`.
+
+## Ver métricas y logs
+
+Con Grafana en `Ready`, dejá este comando corriendo y abrí http://localhost:3005:
+
+```bash
+kubectl port-forward -n aterrizar-observability svc/grafana 3005:3000
+```
+
+Grafana trae el dashboard **AterrizAR - Overview** y las fuentes Prometheus y Loki ya configuradas. El acceso local es anónimo con rol Editor. En **Explore**, probá `up{job=~"backend|flying-service"}` en Prometheus y `{service="backend",level=~".+"}` en Loki.
+
+Prometheus lee `/actuator/prometheus` de cada réplica de los dos servicios Spring. Alloy lee los logs de `aterrizar` a través de la API de Kubernetes y los envía a Loki. Los servicios Spring escriben JSON y sus logs se pueden filtrar por `level`. Los demás contenedores conservan su formato y se pueden filtrar por `service` y `container`. Prometheus y Loki guardan los datos en volúmenes persistentes con una retención de hasta siete días.
 
 ## Guion de demo
 
@@ -161,6 +182,6 @@ Esto también borra los datos de las bases.
 - El backend o flying-service no logran conectarse a su base después de cambiar una clave: la clave se fija al crear el volumen. Borrá el namespace y volvé a aplicar.
 - Falta un pod y no aparece ni en `Pending`: la ResourceQuota lo rechazó. Buscá `exceeded quota` en `kubectl get events -n aterrizar` y revisá `kubectl describe resourcequota -n aterrizar`.
 - Pods en `Pending`: al nodo no le alcanzan los recursos o el volumen todavía no se creó; mirá `kubectl describe pod`.
-- `ImagePullBackOff`: falta construir la imagen con el tag `k8s`.
+- `ImagePullBackOff` en la aplicación o `ErrImageNeverPull` en Alloy: revisá que la imagen local tenga el tag que indica su manifiesto.
 - http://localhost no responde: falta instalar el ingress controller. Si responde 404 de nginx, el controller está pero el Ingress todavía no se aplicó o no se sincronizó.
 - HPA con `<unknown>` en el uso de CPU: falta metrics-server o el parche `--kubelet-insecure-tls`.

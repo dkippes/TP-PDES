@@ -4,6 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: backend
     app.kubernetes.io/part-of: aterrizar
@@ -78,6 +79,11 @@ spec:
                 configMapKeyRef:
                   name: aterrizar-config
                   key: SPRING_PROFILES_ACTIVE
+            - name: LOGGING_STRUCTURED_FORMAT_CONSOLE
+              valueFrom:
+                configMapKeyRef:
+                  name: aterrizar-config
+                  key: LOGGING_STRUCTURED_FORMAT_CONSOLE
             - name: CORS_ALLOWED_ORIGIN
               valueFrom:
                 configMapKeyRef:
@@ -124,6 +130,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: backend
     app.kubernetes.io/part-of: aterrizar
@@ -140,6 +147,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: backend
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: backend
     app.kubernetes.io/part-of: aterrizar
