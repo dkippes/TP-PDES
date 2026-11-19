@@ -12,3 +12,4 @@ k8s/secrets.env
 **/.npm-cache/
 *.tsbuildinfo
 .scannerwork/
+load-tests/results/

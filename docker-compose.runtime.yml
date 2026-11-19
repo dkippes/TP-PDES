@@ -1,0 +1,17 @@
+# Corre backend y flying-service con la imagen runtime (jar compilado en el build)
+# en vez de bootRun con el código montado. Es más parecido a producción y no
+# compila al arrancar. Lo usan el workflow de load test y las mediciones de Docs/load-testing.md:
+#   docker compose -f docker-compose.yml -f docker-compose.runtime.yml up -d --build --wait backend
+services:
+  backend:
+    image: aterrizar-backend:runtime
+    build:
+      target: runtime
+    volumes: !reset []
+    develop: !reset {}
+  flying-service:
+    image: aterrizar-flying-service:runtime
+    build:
+      target: runtime
+    volumes: !reset []
+    develop: !reset {}
