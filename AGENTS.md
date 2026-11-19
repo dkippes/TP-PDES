@@ -140,7 +140,7 @@ These rules apply to both Kotlin services unless a local package already establi
 
 ## Observability
 
-Optional stack in `docker-compose.observability.yml` (config under `observability/`): `docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch`. Grafana at `http://localhost:3000` (anonymous admin, dev only) with provisioned Prometheus and Loki datasources and the "AterrizAR - Overview" dashboard (folder AterrizAR; JSON in `observability/grafana/provisioning/dashboards/json/`, editable in the UI but UI edits are not written back to the file; export the JSON and commit it to keep them).
+Optional stack in `docker-compose.observability.yml` (config under `observability/`): `docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch`. Grafana at `http://localhost:3005` (anonymous admin, dev only) with provisioned Prometheus and Loki datasources and the "AterrizAR - Overview" dashboard (folder AterrizAR; JSON in `observability/grafana/provisioning/dashboards/json/`, editable in the UI but UI edits are not written back to the file; export the JSON and commit it to keep them).
 
 - Both services include Actuator and `micrometer-registry-prometheus`; only `/actuator/health` and `/actuator/prometheus` are exposed (public in the backend's `SecurityConfig`, so restrict them at network level outside local use). Prometheus scrapes both; every series carries the `application` tag.
 - Logs: the override sets `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs` (JSON on stdout); Alloy reads the Compose containers' stdout into Loki and promotes `log.level` to a label. Without the override logs stay human-readable.
@@ -196,7 +196,9 @@ With the `dev` Spring profile (Compose's default), `bootstrap/DevDataSeeder` cre
 
 ## Kubernetes (local cluster)
 
-`k8s/` holds plain manifests applied with `kubectl apply -k k8s/` into namespace `aterrizar`; setup, image builds and the demo script are in `Docs/kubernetes.md`. It targets Docker Desktop Kubernetes and does not replace Compose for development. Cloud deployment, deploy from CD and the observability stack are not part of it.
+`kubectl apply -k k8s/` deploys the application into namespace `aterrizar` and Prometheus, Grafana, Loki and Alloy into `aterrizar-observability`. It targets Docker Desktop Kubernetes. Setup, image builds and the demo script are in `Docs/kubernetes.md`.
+
+- Prometheus discovers each Spring replica, and Alloy streams the application's pod logs using namespace-scoped RBAC. Grafana and Loki reuse their Compose provisioning and configuration. Grafana is available locally with `kubectl port-forward -n aterrizar-observability svc/grafana 3005:3000`.
 
 - Images are built locally as `aterrizar-backend:k8s`, `aterrizar-flying-service:k8s` and `aterrizar-front:k8s` (`imagePullPolicy: IfNotPresent`). The front must be built with `--build-arg VITE_API_URL=http://localhost`: the Ingress serves `/api` (backend) and `/` (front) on the same origin, so `CORS_ALLOWED_ORIGIN` is `http://localhost`.
 - Both PostgreSQL databases are StatefulSets with their own volume claim; the services stay Deployments. `backend` has no `replicas` field because its HPA (1 to 3, 80% CPU, needs metrics-server) owns it; it starts with one pod so the dev seeders do not race on an empty database.

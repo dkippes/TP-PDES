@@ -88,28 +88,64 @@ Compose Watch reinicia Backend o Flying Service cuando cambia su `src/main` o `b
 
 ## Kubernetes (cluster local)
 
-El stack completo también corre en un cluster local (Docker Desktop) con los manifiestos de `k8s/`:
+La aplicación, sus bases y la observabilidad corren en un clúster local (Docker Desktop) con los manifiestos de `k8s/`:
 ```bash
 kubectl apply -k k8s/
 ```
 
-Se abre en http://localhost. Requiere crear `k8s/secrets.env` desde el ejemplo, construir las imágenes e instalar un ingress controller y metrics-server antes; los pasos están en [Docs/kubernetes.md](Docs/kubernetes.md).
+La aplicación se abre en http://localhost y Grafana en http://localhost:3005 mediante `kubectl port-forward`. Los requisitos y pasos están en [Docs/kubernetes.md](Docs/kubernetes.md).
 
-## Observabilidad (Grafana, Prometheus y Loki)
+## Observabilidad con Docker Compose
 
 Es opcional y se suma al stack de desarrollo con un archivo adicional de Compose:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build --watch
 ```
 
-- Grafana: http://localhost:3000 (cambiá el puerto con `GRAFANA_PORT` en `.env`). No pide login en desarrollo.
-- Dashboard: **AterrizAR - Overview**, en Dashboards > AterrizAR. Tiene tráfico y errores HTTP, métricas de negocio (registros, logins, compras, ventas de vuelos), JVM y logs con filtros.
+- Grafana: http://localhost:3005 (cambiá el puerto con `GRAFANA_PORT` en `.env`). No pide login en desarrollo.
+- El dashboard **AterrizAR - Overview** está en Dashboards > AterrizAR. Consultá el [catálogo de métricas](#catálogo-de-métricas).
 - Explorar a mano: en *Explore*, elegí Prometheus (`aterrizar_compras_total`) o Loki (`{service="backend"}`).
-- Métricas: ambos servicios exponen `/actuator/prometheus`; Prometheus las lee cada 15 s.
 - Logs: con este archivo los servicios escriben JSON por consola; Alloy los envía a Loki. Sin él, los logs siguen legibles como siempre.
 - Los logs registran IDs internos y roles, nunca emails, contraseñas ni tokens.
 - Los cambios hechos al dashboard desde la UI no se guardan en el repo: exportá el JSON a `observability/grafana/provisioning/dashboards/json/`.
 - Con Colima, si el puerto de Grafana no responde desde el navegador, `colima restart` rehace el reenvío de puertos.
+
+## Catálogo de métricas
+
+El dashboard **AterrizAR - Overview** está disponible con Docker Compose y Kubernetes. En ambos casos, Prometheus consulta `/actuator/prometheus` de los dos servicios Spring cada 15 segundos. El label `application` usa `backend` y `flying.service`. El label `job` usa `backend` y `flying-service`. En Kubernetes, `pod` identifica cada réplica.
+
+### Métricas de negocio
+
+| Métrica de Prometheus | Servicio | Qué mide | Valores de `resultado` |
+| --- | --- | --- | --- |
+| `aterrizar_registros_total` | Backend | Contador de registros públicos de compradores | `exitoso`, `duplicado` |
+| `aterrizar_logins_total` | Backend | Contador de intentos de inicio de sesión | `exitoso`, `fallido` |
+| `aterrizar_sesiones_refresh_total` | Backend | Contador de renovaciones de sesión | `exitoso`, `invalido` |
+| `aterrizar_compras_total` | Backend | Contador de operaciones de compra de paquetes por resultado | `exitosa`, `repetida`, `rechazada`, `servicio_no_disponible`, `operacion_en_uso` |
+| `aterrizar_compras_monto_total` | Backend | Importe acumulado de compras nuevas exitosas (USD en el catálogo) | — |
+| `aterrizar_usuarios` | Backend | Gauge con la cantidad actual de cuentas de todos los roles en PostgreSQL | — |
+| `aterrizar_ventas_vuelos_total` | Flying Service | Contador de operaciones de venta de vuelos por resultado | `exitosa`, `repetida`, `sin_disponibilidad`, `vuelo_inexistente`, `conflicto` |
+| `aterrizar_asientos_vendidos_total` | Flying Service | Contador de asientos descontados en ventas nuevas, uno por tramo | — |
+
+Para ver lo ocurrido en un período, el dashboard aplica `increase()` a los contadores. Para el total de usuarios usa `max(aterrizar_usuarios)`, ya que cada réplica consulta la misma base.
+
+### Métricas técnicas
+
+| Métrica de Prometheus | Qué muestra Grafana |
+| --- | --- |
+| `http_server_requests_seconds_count` | Solicitudes por segundo por servicio y por código HTTP, porcentaje de respuestas 4xx y 5xx por servicio y porcentaje global de 5xx en el período elegido |
+| `http_server_requests_seconds_bucket` | Latencia p95 en segundos por servicio y los ocho endpoints con mayor p95, agrupados por método y ruta |
+| `jvm_memory_used_bytes{area="heap"}` | Memoria heap usada en bytes, sumada por servicio |
+| `process_cpu_usage` | Uso de CPU del proceso en porcentaje |
+| `hikaricp_connections_active` | Conexiones activas por pool HikariCP |
+
+Los paneles HTTP excluyen las rutas de Actuator, incluidas las sondas y las consultas de Prometheus. El volumen de logs por nivel se calcula en Loki.
+
+En **Explore → Prometheus** también podés consultar `up{job=~"backend|flying-service"}` para verificar la recolección (`1` indica que el último scrape fue exitoso). Spring Boot y Micrometer exponen métricas adicionales de arranque, solicitudes HTTP en curso, JVM y recolección de basura, proceso, sistema y disco, JDBC/HikariCP, Tomcat, ejecutores, Logback y Spring Data/Security. Esta consulta lista los nombres activos y la cantidad de series de cada uno.
+
+```promql
+count by (__name__) ({job=~"backend|flying-service"})
+```
 
 ## Tests de carga (k6)
 

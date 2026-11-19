@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: aterrizar
+    metrics_path: /actuator/prometheus
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [aterrizar]
+        selectors:
+          - role: pod
+            label: app.kubernetes.io/name in (backend,flying-service)
+    relabel_configs:
+      - action: keep
+        source_labels: [__meta_kubernetes_pod_container_name, __meta_kubernetes_pod_container_port_number]
+        regex: backend;8080|flying-service;8081
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        target_label: job
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod

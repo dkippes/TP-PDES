@@ -4,6 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: aterrizar
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: aterrizar
     app.kubernetes.io/part-of: aterrizar
