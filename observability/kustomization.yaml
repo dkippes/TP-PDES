@@ -1,0 +1,18 @@
+# Configuración compartida con Docker Compose. Kustomize genera los ConfigMaps
+# en este directorio para poder leer los archivos desde su raíz.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: loki-config
+    namespace: aterrizar-observability
+    files:
+      - loki.yml
+  - name: grafana-datasources
+    namespace: aterrizar-observability
+    files:
+      - grafana/provisioning/datasources/datasources.yml
+  - name: grafana-dashboards
+    namespace: aterrizar-observability
+    files:
+      - grafana/provisioning/dashboards/dashboards.yml
+      - grafana/provisioning/dashboards/json/aterrizar-overview.json

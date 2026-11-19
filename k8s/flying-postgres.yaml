@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: flying-postgres
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: flying-postgres
     app.kubernetes.io/part-of: aterrizar
@@ -19,6 +20,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: flying-postgres
+  namespace: aterrizar
   labels:
     app.kubernetes.io/name: flying-postgres
     app.kubernetes.io/part-of: aterrizar
