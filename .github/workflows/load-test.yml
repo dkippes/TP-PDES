@@ -1,0 +1,31 @@
+name: Load test (smoke)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: k6 smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preparar variables de entorno
+        run: cp .env.example .env
+
+      # Imagen runtime: el jar se compila en el build, así el healthcheck no espera a bootRun.
+      - name: Levantar el backend y sus dependencias
+        run: docker compose -f docker-compose.yml -f docker-compose.runtime.yml up -d --build --wait backend
+
+      - name: Correr smoke test
+        run: docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run smoke.js
+
+      - name: Logs de los servicios
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.runtime.yml logs backend flying-service --tail 200
+
+      - name: Bajar el stack
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.runtime.yml down -v

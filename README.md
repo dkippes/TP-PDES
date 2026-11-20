@@ -147,6 +147,32 @@ En **Explore → Prometheus** también podés consultar `up{job=~"backend|flying
 count by (__name__) ({job=~"backend|flying-service"})
 ```
 
+## Tests de carga (k6)
+
+Smoke, load, stress y spike con k6, sin instalar nada. Con el stack ya levantado (por ejemplo con `docker compose up --build --watch`), desde otra terminal.
+
+| Test | Archivo | Qué hace | Duración |
+| --- | --- | --- | --- |
+| Smoke | `smoke.js` | 3 usuarios: verifica que todo responde | 30 s |
+| Load | `load.js` | Carga esperada: sube a 20 usuarios y la sostiene | 4,5 min |
+| Stress | `stress.js` | Escalones hasta 150 usuarios y vuelta a 5 para ver si se recupera (`-e ESCALA=5` llega a 750) | 6,5 min |
+| Spike | `spike.js` | Salto brusco de 5 a 150 usuarios y vuelta | 3 min |
+
+Un test, cambiando el archivo al final por el que quieras correr:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run smoke.js
+docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run load.js
+docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run stress.js
+docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run spike.js
+```
+
+Los cuatro en secuencia (unos 15 minutos), con un reporte HTML por test en `load-tests/results/`:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm --entrypoint sh k6 all-tests.sh
+```
+
+Cada corrida deja un reporte en `load-tests/results/` que se abre con el navegador. Detalles, umbrales, métricas en Grafana y ejecución contra Kubernetes en [Docs/load-testing.md](Docs/load-testing.md).
+
 ## Administración y datos demo
 
 Al iniciar con el perfil `dev` (predeterminado de Compose), se cargan automáticamente en PostgreSQL estas cuentas, todas con contraseña `12345678`:

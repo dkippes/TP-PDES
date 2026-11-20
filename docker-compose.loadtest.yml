@@ -1,0 +1,29 @@
+# Tests de carga con k6. Requiere el stack ya levantado (no lo inicia ni lo reinicia).
+# Se usa junto con el archivo base:
+#   docker compose -f docker-compose.yml -f docker-compose.loadtest.yml run --rm k6 run smoke.js
+# Con Grafana (dashboard "AterrizAR - Test de carga (k6)"):
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml -f docker-compose.loadtest.yml \
+#     run --rm k6 run -o experimental-prometheus-rw load.js
+# Variables del test con -e de k6, por ejemplo: run --rm k6 run -e ESCALA=5 stress.js
+# Contra Kubernetes: LOAD_BASE_URL=http://host.docker.internal (ver Docs/load-testing.md).
+# Cada corrida deja un reporte HTML en load-tests/results/ (ultimo-reporte.html por defecto;
+# para guardarlo con otro nombre: run --rm -e K6_WEB_DASHBOARD_EXPORT=results/load.html k6 run load.js).
+services:
+  k6:
+    image: grafana/k6:1.8.3
+    profiles: ["loadtest"]
+    working_dir: /scripts
+    environment:
+      BASE_URL: ${LOAD_BASE_URL:-http://backend:8080}
+      BUYER_POOL: ${LOAD_BUYER_POOL:-20}
+      K6_PROMETHEUS_RW_SERVER_URL: http://prometheus:9090/api/v1/write
+      K6_PROMETHEUS_RW_TREND_STATS: p(95),p(99),avg,max
+      # Dashboard web de k6: en vivo en el puerto 5665 (con -p 5665:5665) y exportado a HTML al terminar.
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: results/ultimo-reporte.html
+    volumes:
+      - ./load-tests:/scripts:ro
+      # Única carpeta escribible: los reportes generados (ignorada por git).
+      - ./load-tests/results:/scripts/results
+    networks:
+      - app-network
